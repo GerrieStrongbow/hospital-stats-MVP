@@ -148,14 +148,10 @@ p {
     background-color: var(--surface-color);
     transition: border-color 0.3s ease;
     -webkit-appearance: none;
+    appearance: none;
 }
 
-.form-input:focus,
-.form-select:focus,
-.form-textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-}
+/* Focus styles are now handled in the enhanced section below */
 
 .form-input:disabled,
 .form-select:disabled {
@@ -163,12 +159,25 @@ p {
     color: var(--text-disabled);
 }
 
-/* Select Arrow */
-.form-select {
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23757575' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
+/* Select Arrow - Enhanced Visibility */
+.form-select,
+select.form-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%23424242' d='M8 10.5L3.5 6h9L8 10.5z'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 12px center;
-    padding-right: 36px;
+    background-color: var(--surface-color);
+    padding-right: 40px;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    border: 1px solid var(--divider-color);
+}
+
+/* Focused select arrow - darker for better visibility */
+.form-select:focus,
+select.form-input:focus {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpath fill='%231976d2' d='M8 10.5L3.5 6h9L8 10.5z'/%3E%3C/svg%3E");
 }
 
 /* Buttons */
@@ -410,3 +419,187 @@ p {
 .text-secondary { color: var(--text-secondary); }
 
 .hidden { display: none !important; }
+
+/* Patient Form Styles */
+.form-help {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: var(--spacing-xs);
+    display: block;
+}
+
+.checkbox-group {
+    border: 1px solid var(--divider-color);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    background: var(--background-color);
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.checkbox-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+}
+
+.checkbox-item:last-child {
+    margin-bottom: 0;
+}
+
+.checkbox-item input[type="checkbox"] {
+    margin-right: var(--spacing-sm);
+    cursor: pointer;
+}
+
+.checkbox-item label {
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.device-section {
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-md);
+    border: 1px solid var(--divider-color);
+    border-radius: var(--radius-sm);
+    background: var(--surface-color);
+}
+
+.device-section h4 {
+    color: var(--text-primary);
+    font-weight: 500;
+    margin-bottom: var(--spacing-sm);
+    font-size: 16px;
+}
+
+.device-details {
+    margin-top: var(--spacing-sm);
+    padding-left: var(--spacing-lg);
+}
+
+.form-actions {
+    display: flex;
+    gap: var(--spacing-md);
+    justify-content: flex-end;
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--divider-color);
+}
+
+/* Form validation styles */
+.field-error {
+    color: var(--error-color);
+    font-size: 14px;
+    margin: var(--spacing-sm) 0;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: #ffebee;
+    border: 1px solid var(--error-color);
+    border-radius: var(--radius-sm);
+}
+
+.form-errors {
+    margin-bottom: var(--spacing-lg);
+}
+
+.form-errors ul {
+    margin: var(--spacing-xs) 0 0 var(--spacing-md);
+    padding: 0;
+}
+
+.form-errors li {
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Enhanced form inputs for mobile - extended focus states */
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}
+
+.form-input:invalid,
+.form-input.error {
+    border-color: var(--error-color);
+    background-color: #fffbfb;
+}
+
+.field-error-inline {
+    color: var(--error-color);
+    font-size: 12px;
+    margin-top: 4px;
+    display: block;
+}
+
+/* Touch-friendly checkbox and radio styles */
+.checkbox-item input[type="checkbox"],
+.form-radio input[type="radio"] {
+    width: 24px;
+    height: 24px;
+    margin-right: var(--spacing-sm);
+    cursor: pointer;
+    transform: scale(1.2);
+}
+
+/* Improved textarea for mobile */
+.form-textarea {
+    min-height: 80px;
+    resize: vertical;
+}
+
+/* Better date input styling */
+.form-input[type="date"] {
+    position: relative;
+}
+
+/* Number input styling */
+.form-input[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
+
+.form-input[type="number"]::-webkit-outer-spin-button,
+.form-input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+}
+
+/* Mobile responsive adjustments for patient form */
+@media (max-width: 480px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .checkbox-group {
+        max-height: 150px;
+    }
+    
+    .device-details {
+        padding-left: var(--spacing-md);
+    }
+    
+    /* Larger touch targets on mobile */
+    .checkbox-item input[type="checkbox"],
+    .form-radio input[type="radio"] {
+        width: 28px;
+        height: 28px;
+        transform: scale(1.3);
+    }
+    
+    .btn {
+        padding: 16px 24px;
+        font-size: 16px;
+        min-height: 48px;
+    }
+    
+    .form-input,
+    .form-select,
+    .form-textarea {
+        font-size: 16px;
+        padding: 16px;
+        min-height: 48px;
+    }
+}

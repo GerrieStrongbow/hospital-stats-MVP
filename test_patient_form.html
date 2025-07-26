@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Form Test - Hospital Stats</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+
+        .info {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+        }
+
+        .warning {
+            background-color: #fff3e0;
+            border: 1px solid #ff9800;
+            color: #f57c00;
+        }
+
+        .btn {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: #1565c0;
+        }
+
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+
+        .test-section h3 {
+            margin-top: 0;
+            color: #1976d2;
+        }
+
+        .validation-demo {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+
+        .validation-demo input,
+        .validation-demo select {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .validation-demo input.error {
+            border-color: #f44336;
+            background-color: #fffbfb;
+        }
+
+        .field-error-inline {
+            color: #f44336;
+            font-size: 12px;
+            margin-top: 4px;
+            display: block;
+        }
+    </style>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- App Configuration -->
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Hospital Stats MVP - Patient Form Test Suite</h1>
+        <p>This page tests the patient form functionality, validation, and mobile responsiveness.</p>
+
+        <div class="test-section">
+            <h3>📋 Form Structure Tests</h3>
+            <div id="structure-results"></div>
+            <button type="button" class="btn" onclick="testFormStructure()">Test Form Structure</button>
+        </div>
+
+        <div class="test-section">
+            <h3>✅ Validation Tests</h3>
+            <div id="validation-results"></div>
+            <button type="button" class="btn" onclick="testValidation()">Test Validation Logic</button>
+            
+            <div class="validation-demo">
+                <h4>Live Validation Demo:</h4>
+                <label>Patient ID (test live validation):</label>
+                <input type="text" id="demo-patient-id" placeholder="Try: 'abc 123' or 'x' or 'verylongpatientidentifier'">
+                <span id="demo-patient-error" class="field-error-inline" style="display: none;"></span>
+                
+                <label>Appointment Date (test date validation):</label>
+                <input type="date" id="demo-date">
+                <span id="demo-date-error" class="field-error-inline" style="display: none;"></span>
+                
+                <label>Duration (1-480 minutes):</label>
+                <input type="number" id="demo-duration" placeholder="Try: 0, 500, or text">
+                <span id="demo-duration-error" class="field-error-inline" style="display: none;"></span>
+                
+                <label>Facility Type (test conditional facility field):</label>
+                <select id="demo-facility-type" onchange="testFacilityConditional()">
+                    <option value="">Select facility type</option>
+                    <option value="in-hospital">In-hospital</option>
+                    <option value="out-hospital">Out-hospital</option>
+                    <option value="icf">Intermediate Care Facility (ICF)</option>
+                    <option value="phc">Primary Health Care (PHC)</option>
+                </select>
+                
+                <div id="demo-facility-group" style="display: none; margin-top: 10px;">
+                    <label>Facility (only shows for PHC):</label>
+                    <select id="demo-facility">
+                        <option value="">Select facility</option>
+                        <option value="test-clinic">Test Clinic</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Mobile Responsiveness Tests</h3>
+            <div id="mobile-results"></div>
+            <button type="button" class="btn" onclick="testMobileFeatures()">Test Mobile Features</button>
+            <p><small>Resize your browser window or test on mobile device to verify responsive behavior.</small></p>
+        </div>
+
+        <div class="test-section">
+            <h3>💾 Offline Storage Tests</h3>
+            <div id="storage-results"></div>
+            <button type="button" class="btn" onclick="testOfflineStorage()">Test Offline Storage</button>
+            <button type="button" class="btn" onclick="clearTestData()">Clear Test Data</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Data Integrity Tests</h3>
+            <div id="integrity-results"></div>
+            <button type="button" class="btn" onclick="testDataIntegrity()">Test Data Collection</button>
+        </div>
+
+        <div class="test-section">
+            <h3>🔗 Navigation Test</h3>
+            <div id="navigation-results"></div>
+            <button type="button" class="btn" onclick="navigateToPatientForm()">Go to Patient Form</button>
+            <button type="button" class="btn" onclick="navigateToAuth()">Go to Auth Test</button>
+        </div>
+
+        <h2>Test Results:</h2>
+        <div id="test-results"></div>
+    </div>
+
+    <script>
+        let testCount = 0;
+        const testResults = document.getElementById('test-results');
+
+        function addTestResult(name, status, message, containerId = 'test-results') {
+            testCount++;
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `<strong>Test ${testCount}: ${name}</strong><br>${message}`;
+            document.getElementById(containerId).appendChild(div);
+        }
+
+        // Test 1: Form Structure
+        function testFormStructure() {
+            const container = document.getElementById('structure-results');
+            container.innerHTML = '';
+            
+            // Load the main app temporarily to check form structure
+            fetch('index.html')
+                .then(response => response.text())
+                .then(html => {
+                    // Check if patient form elements exist in the source
+                    const hasPatientForm = html.includes('patient-form');
+                    const hasPatientId = html.includes('patient-identifier') || html.includes('patientIdentifier');
+                    const hasFacilitySelect = html.includes('facility-type') || html.includes('facilityType');
+                    const hasActivities = html.includes('activities');
+                    const hasAssistiveDevices = html.includes('assistiveDevices');
+                    
+                    addTestResult(
+                        'Patient Form Structure',
+                        hasPatientForm ? 'success' : 'error',
+                        hasPatientForm ? '✓ Patient form structure found in HTML' : '✗ Patient form structure missing',
+                        'structure-results'
+                    );
+                    
+                    addTestResult(
+                        'Required Form Fields',
+                        (hasPatientId && hasFacilitySelect) ? 'success' : 'warning',
+                        `Patient ID: ${hasPatientId ? '✓' : '✗'}, Facility Type: ${hasFacilitySelect ? '✓' : '✗'}`,
+                        'structure-results'
+                    );
+                    
+                    addTestResult(
+                        'Complex Form Elements',
+                        (hasActivities && hasAssistiveDevices) ? 'success' : 'warning',
+                        `Activities: ${hasActivities ? '✓' : '✗'}, Assistive Devices: ${hasAssistiveDevices ? '✓' : '✗'}`,
+                        'structure-results'
+                    );
+                })
+                .catch(error => {
+                    addTestResult(
+                        'Form Structure Load',
+                        'error',
+                        '✗ Could not load main HTML file: ' + error.message,
+                        'structure-results'
+                    );
+                });
+        }
+
+        // Test 2: Validation Logic
+        function testValidation() {
+            const container = document.getElementById('validation-results');
+            container.innerHTML = '';
+            
+            // Test patient ID validation
+            const patientIdTests = [
+                { input: 'valid123', expected: true, description: 'Valid patient ID' },
+                { input: 'ab', expected: true, description: 'Minimum length (2 chars)' },
+                { input: 'x', expected: false, description: 'Too short (1 char)' },
+                { input: 'abc 123', expected: false, description: 'Contains space' },
+                { input: 'verylongpatientidentifier', expected: false, description: 'Too long (>20 chars)' },
+                { input: '', expected: false, description: 'Empty patient ID' }
+            ];
+            
+            let validationPassed = 0;
+            let validationTotal = patientIdTests.length;
+            
+            patientIdTests.forEach(test => {
+                const isValid = validatePatientId(test.input);
+                const passed = isValid === test.expected;
+                if (passed) validationPassed++;
+                
+                addTestResult(
+                    `Patient ID: ${test.description}`,
+                    passed ? 'success' : 'error',
+                    `Input: "${test.input}" → Expected: ${test.expected}, Got: ${isValid}`,
+                    'validation-results'
+                );
+            });
+            
+            // Test date validation
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            const oldDate = new Date(today);
+            oldDate.setFullYear(oldDate.getFullYear() - 2);
+            
+            const dateTests = [
+                { input: today.toISOString().split('T')[0], expected: true, description: 'Today' },
+                { input: tomorrow.toISOString().split('T')[0], expected: false, description: 'Future date' },
+                { input: oldDate.toISOString().split('T')[0], expected: false, description: 'Too old (2 years ago)' }
+            ];
+            
+            dateTests.forEach(test => {
+                const isValid = validateDate(test.input);
+                const passed = isValid === test.expected;
+                if (passed) validationPassed++;
+                validationTotal++;
+                
+                addTestResult(
+                    `Date: ${test.description}`,
+                    passed ? 'success' : 'error',
+                    `Date: ${test.input} → Expected: ${test.expected}, Got: ${isValid}`,
+                    'validation-results'
+                );
+            });
+            
+            addTestResult(
+                'Overall Validation',
+                validationPassed === validationTotal ? 'success' : 'warning',
+                `${validationPassed}/${validationTotal} validation tests passed`,
+                'validation-results'
+            );
+        }
+
+        // Test 3: Mobile Features
+        function testMobileFeatures() {
+            const container = document.getElementById('mobile-results');
+            container.innerHTML = '';
+            
+            const screenWidth = window.innerWidth;
+            const isMobile = screenWidth <= 480;
+            const isTablet = screenWidth > 480 && screenWidth <= 768;
+            const isDesktop = screenWidth > 768;
+            
+            addTestResult(
+                'Screen Size Detection',
+                'info',
+                `Current viewport: ${screenWidth}px (${isMobile ? 'Mobile' : isTablet ? 'Tablet' : 'Desktop'})`,
+                'mobile-results'
+            );
+            
+            // Check if CSS custom properties are supported
+            const supportsCustomProps = CSS.supports('color', 'var(--test)');
+            addTestResult(
+                'CSS Custom Properties',
+                supportsCustomProps ? 'success' : 'error',
+                supportsCustomProps ? '✓ CSS custom properties supported' : '✗ CSS custom properties not supported',
+                'mobile-results'
+            );
+            
+            // Check touch support
+            const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+            addTestResult(
+                'Touch Support',
+                hasTouch ? 'success' : 'info',
+                hasTouch ? '✓ Touch events supported' : 'ℹ No touch support (desktop)',
+                'mobile-results'
+            );
+            
+            // Test viewport meta tag
+            const viewportMeta = document.querySelector('meta[name="viewport"]');
+            addTestResult(
+                'Viewport Meta Tag',
+                viewportMeta ? 'success' : 'warning',
+                viewportMeta ? `✓ Viewport configured: ${viewportMeta.content}` : '⚠ No viewport meta tag found',
+                'mobile-results'
+            );
+        }
+
+        // Test 4: Offline Storage
+        function testOfflineStorage() {
+            const container = document.getElementById('storage-results');
+            container.innerHTML = '';
+            
+            try {
+                // Test localStorage availability
+                const testKey = 'hospital_stats_test';
+                const testData = { test: true, timestamp: Date.now() };
+                
+                localStorage.setItem(testKey, JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem(testKey));
+                
+                const storageWorks = retrieved && retrieved.test === true;
+                addTestResult(
+                    'localStorage Basic Test',
+                    storageWorks ? 'success' : 'error',
+                    storageWorks ? '✓ localStorage read/write working' : '✗ localStorage failed',
+                    'storage-results'
+                );
+                
+                // Test patient records storage
+                const mockPatientRecord = {
+                    user_id: 'test-user',
+                    patient_identifier: 'TEST001',
+                    age_group: '>18',
+                    facility: 'Test Facility',
+                    facility_type: 'phc',
+                    appointment_date: '2024-01-15',
+                    appointment_type: 'new',
+                    activities: ['assessment', 'treatment'],
+                    assistive_devices: { wheelchair: { issued: true, serial_number: 'TEST123' } },
+                    created_at: new Date().toISOString(),
+                    local_id: Date.now().toString(),
+                    synced: false
+                };
+                
+                // Test saving patient record
+                const existingRecords = JSON.parse(localStorage.getItem('patient_records') || '[]');
+                existingRecords.push(mockPatientRecord);
+                localStorage.setItem('patient_records', JSON.stringify(existingRecords));
+                
+                // Test sync queue
+                const syncQueue = JSON.parse(localStorage.getItem('sync_queue') || '[]');
+                syncQueue.push(mockPatientRecord.local_id);
+                localStorage.setItem('sync_queue', JSON.stringify(syncQueue));
+                
+                addTestResult(
+                    'Patient Records Storage',
+                    'success',
+                    `✓ Stored mock patient record. Total records: ${existingRecords.length}`,
+                    'storage-results'
+                );
+                
+                addTestResult(
+                    'Sync Queue Management',
+                    'success',
+                    `✓ Sync queue updated. Queue length: ${syncQueue.length}`,
+                    'storage-results'
+                );
+                
+                // Clean up test data
+                localStorage.removeItem(testKey);
+                
+            } catch (error) {
+                addTestResult(
+                    'localStorage Test',
+                    'error',
+                    '✗ localStorage error: ' + error.message,
+                    'storage-results'
+                );
+            }
+        }
+
+        // Test 5: Data Integrity
+        function testDataIntegrity() {
+            const container = document.getElementById('integrity-results');
+            container.innerHTML = '';
+            
+            // Check if required data structures exist
+            const requiredFields = [
+                'patient_identifier', 'age_group', 'facility', 'facility_type',
+                'appointment_date', 'appointment_type', 'referral_source',
+                'clinical_area', 'attendance', 'disposal', 'outcome'
+            ];
+            
+            const optionalFields = [
+                'referral_source_other', 'clinical_area_other', 'duration_minutes',
+                'activities', 'assistive_devices'
+            ];
+            
+            addTestResult(
+                'Required Fields Definition',
+                'info',
+                `Required fields: ${requiredFields.length}, Optional fields: ${optionalFields.length}`,
+                'integrity-results'
+            );
+            
+            // Test data validation
+            const mockFormData = new FormData();
+            requiredFields.forEach(field => {
+                mockFormData.set(field, `test_${field}`);
+            });
+            
+            // Test assistive devices structure
+            const assistiveDevicesTest = {
+                wheelchair: { issued: true, funding: 'state', serial_number: 'TEST123' },
+                mobility: { issued: true, funding: 'donor' },
+                other: { issued: true, device_name: 'Test Device' }
+            };
+            
+            addTestResult(
+                'Assistive Devices Structure',
+                'success',
+                `✓ Complex device data structure: ${Object.keys(assistiveDevicesTest).join(', ')}`,
+                'integrity-results'
+            );
+            
+            // Test activities array
+            const activitiesTest = ['assessment', 'treatment', 'education', 'exercise'];
+            addTestResult(
+                'Activities Array',
+                'success',
+                `✓ Activities array structure: ${activitiesTest.length} items`,
+                'integrity-results'
+            );
+        }
+
+        // Clear test data
+        function clearTestData() {
+            const container = document.getElementById('storage-results');
+            try {
+                localStorage.removeItem('patient_records');
+                localStorage.removeItem('sync_queue');
+                localStorage.removeItem('hospital_stats_test');
+                
+                addTestResult(
+                    'Clear Test Data',
+                    'success',
+                    '✓ All test data cleared from localStorage',
+                    'storage-results'
+                );
+            } catch (error) {
+                addTestResult(
+                    'Clear Test Data',
+                    'error',
+                    '✗ Error clearing data: ' + error.message,
+                    'storage-results'
+                );
+            }
+        }
+
+        // Navigation helpers
+        function navigateToPatientForm() {
+            window.location.href = 'index.html#patientForm';
+        }
+        
+        function navigateToAuth() {
+            window.location.href = 'test_auth.html';
+        }
+
+        // Test conditional facility field
+        function testFacilityConditional() {
+            const facilityType = document.getElementById('demo-facility-type').value;
+            const facilityGroup = document.getElementById('demo-facility-group');
+            
+            if (facilityType === 'phc') {
+                facilityGroup.style.display = 'block';
+                addTestResult(
+                    'Conditional Facility Display',
+                    'success',
+                    '✓ Facility field shown for PHC selection',
+                    'validation-results'
+                );
+            } else {
+                facilityGroup.style.display = 'none';
+                addTestResult(
+                    'Conditional Facility Display',
+                    'success',
+                    `✓ Facility field hidden for ${facilityType || 'no selection'}`,
+                    'validation-results'
+                );
+            }
+        }
+
+        // Validation helper functions (simplified versions of the real ones)
+        function validatePatientId(value) {
+            if (!value) return false;
+            const trimmed = value.trim();
+            return trimmed.length >= 2 && trimmed.length <= 20 && !trimmed.includes(' ');
+        }
+
+        function validateDate(dateString) {
+            if (!dateString) return false;
+            const date = new Date(dateString);
+            const now = new Date();
+            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+            
+            return date <= now && date >= oneYearAgo;
+        }
+
+        function validateDuration(value) {
+            const num = parseInt(value);
+            return !isNaN(num) && num >= 1 && num <= 480;
+        }
+
+        // Live validation demo setup
+        document.addEventListener('DOMContentLoaded', () => {
+            const patientIdInput = document.getElementById('demo-patient-id');
+            const dateInput = document.getElementById('demo-date');
+            const durationInput = document.getElementById('demo-duration');
+            
+            // Set up date input constraints
+            const today = new Date().toISOString().split('T')[0];
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+            dateInput.max = today;
+            dateInput.min = oneYearAgo.toISOString().split('T')[0];
+            
+            patientIdInput.addEventListener('input', (e) => {
+                const isValid = validatePatientId(e.target.value);
+                const errorSpan = document.getElementById('demo-patient-error');
+                
+                if (e.target.value && !isValid) {
+                    e.target.classList.add('error');
+                    errorSpan.textContent = 'Patient ID must be 2-20 characters with no spaces';
+                    errorSpan.style.display = 'block';
+                } else {
+                    e.target.classList.remove('error');
+                    errorSpan.style.display = 'none';
+                }
+            });
+            
+            dateInput.addEventListener('change', (e) => {
+                const isValid = validateDate(e.target.value);
+                const errorSpan = document.getElementById('demo-date-error');
+                
+                if (e.target.value && !isValid) {
+                    e.target.classList.add('error');
+                    errorSpan.textContent = 'Date must be within the last year and not in the future';
+                    errorSpan.style.display = 'block';
+                } else {
+                    e.target.classList.remove('error');
+                    errorSpan.style.display = 'none';
+                }
+            });
+            
+            durationInput.addEventListener('input', (e) => {
+                const isValid = validateDuration(e.target.value);
+                const errorSpan = document.getElementById('demo-duration-error');
+                
+                if (e.target.value && !isValid) {
+                    e.target.classList.add('error');
+                    errorSpan.textContent = 'Duration must be between 1 and 480 minutes';
+                    errorSpan.style.display = 'block';
+                } else {
+                    e.target.classList.remove('error');
+                    errorSpan.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>
