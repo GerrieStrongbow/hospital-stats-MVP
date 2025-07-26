@@ -36,7 +36,7 @@ This can be the real app for production that is clean, maintainable and scalable
 
 5. Always add unit tests, integration tests and end-to-end tests where relevant.
 
-6. After completing a phase, add a high level summary/explanation of the completed work at the end of each phase. Also which tests you added relating to that phase.
+6. After completing a phase, add a high level summary/explanation of the completed work at the end of each phase in the PLANNING.md file. Also which tests you added relating to that phase.
 
 7. Make every task and code change as simple as possible. Don't overcomplicate the code, especially not for an MVP.
 

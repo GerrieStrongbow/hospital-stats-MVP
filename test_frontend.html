@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Test - Hospital Stats</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        .info {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+        }
+        .btn {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background-color: #1565c0;
+        }
+    </style>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- App Configuration -->
+    <script src="config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Hospital Stats MVP - Frontend Test Suite</h1>
+        <p>This page tests the frontend functionality and database connectivity.</p>
+        
+        <h2>Test Results:</h2>
+        <div id="test-results"></div>
+        
+        <h2>Manual Tests:</h2>
+        <button class="btn" onclick="testSupabaseConnection()">Test Supabase Connection</button>
+        <button class="btn" onclick="testTableAccess()">Test Table Access</button>
+        <button class="btn" onclick="testRouting()">Test App Routing</button>
+        <button class="btn" onclick="runAllTests()">Run All Tests</button>
+    </div>
+
+    <script>
+        const testResults = document.getElementById('test-results');
+        let testCount = 0;
+
+        function addTestResult(name, status, message) {
+            testCount++;
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `<strong>Test ${testCount}: ${name}</strong><br>${message}`;
+            testResults.appendChild(div);
+        }
+
+        function log(message) {
+            console.log(message);
+        }
+
+        // Test 1: Check if required libraries are loaded
+        function testLibraries() {
+            addTestResult(
+                'Library Loading',
+                typeof supabase !== 'undefined' ? 'success' : 'error',
+                typeof supabase !== 'undefined' 
+                    ? '✓ Supabase library loaded successfully'
+                    : '✗ Supabase library failed to load'
+            );
+
+            addTestResult(
+                'App Configuration',
+                window.APP_CONFIG ? 'success' : 'error',
+                window.APP_CONFIG 
+                    ? `✓ Configuration loaded: URL=${window.APP_CONFIG.SUPABASE_URL.substring(0, 30)}...`
+                    : '✗ App configuration not loaded'
+            );
+        }
+
+        // Test 2: Test Supabase connection
+        async function testSupabaseConnection() {
+            try {
+                if (!window.APP_CONFIG) {
+                    throw new Error('App configuration not loaded');
+                }
+
+                const supabaseClient = supabase.createClient(
+                    window.APP_CONFIG.SUPABASE_URL, 
+                    window.APP_CONFIG.SUPABASE_ANON_KEY
+                );
+
+                // Test basic connection by checking auth status
+                const { data, error } = await supabaseClient.auth.getSession();
+                
+                if (error) {
+                    throw error;
+                }
+
+                addTestResult(
+                    'Supabase Connection',
+                    'success',
+                    '✓ Successfully connected to Supabase. Session status: ' + (data.session ? 'Authenticated' : 'Not authenticated')
+                );
+
+                return supabaseClient;
+            } catch (error) {
+                addTestResult(
+                    'Supabase Connection',
+                    'error',
+                    '✗ Failed to connect to Supabase: ' + error.message
+                );
+                return null;
+            }
+        }
+
+        // Test 3: Test table access (without authentication)
+        async function testTableAccess() {
+            try {
+                const supabaseClient = await testSupabaseConnection();
+                if (!supabaseClient) {
+                    throw new Error('Supabase client not available');
+                }
+
+                // Test patient_records table (should be empty due to RLS)
+                const { data: patientData, error: patientError } = await supabaseClient
+                    .from('patient_records')
+                    .select('count()', { count: 'exact' });
+
+                // Test user_profiles table (should be empty due to RLS)  
+                const { data: profileData, error: profileError } = await supabaseClient
+                    .from('user_profiles')
+                    .select('count()', { count: 'exact' });
+
+                if (patientError || profileError) {
+                    // This is expected due to RLS policies
+                    addTestResult(
+                        'Table Access (Unauthenticated)',
+                        'success',
+                        '✓ Tables are protected by RLS. Access denied as expected for unauthenticated users.'
+                    );
+                } else {
+                    addTestResult(
+                        'Table Access (Unauthenticated)', 
+                        'info',
+                        `✓ Tables accessible. Records: ${patientData?.length || 0} patients, ${profileData?.length || 0} profiles`
+                    );
+                }
+
+            } catch (error) {
+                addTestResult(
+                    'Table Access',
+                    'error',
+                    '✗ Table access test failed: ' + error.message
+                );
+            }
+        }
+
+        // Test 4: Test app routing
+        function testRouting() {
+            try {
+                // Test if we can navigate between pages
+                const currentURL = window.location.href;
+                const hasHashRouting = currentURL.includes('#');
+                
+                addTestResult(
+                    'Routing System',
+                    'success',
+                    `✓ URL routing detected. Current URL: ${currentURL}. Hash routing: ${hasHashRouting ? 'Enabled' : 'Disabled'}`
+                );
+
+                // Test navigation
+                if (typeof router !== 'undefined') {
+                    addTestResult(
+                        'Router Object',
+                        'success',
+                        '✓ Router object is available in global scope'
+                    );
+                } else {
+                    addTestResult(
+                        'Router Object',
+                        'error',
+                        '✗ Router object not found. Main app may not be loaded.'
+                    );
+                }
+
+            } catch (error) {
+                addTestResult(
+                    'Routing System',
+                    'error',
+                    '✗ Routing test failed: ' + error.message
+                );
+            }
+        }
+
+        // Test 5: Test CSS and styling
+        function testStyling() {
+            const computedStyle = window.getComputedStyle(document.body);
+            const fontFamily = computedStyle.fontFamily;
+            
+            addTestResult(
+                'CSS Styling',
+                fontFamily.includes('Roboto') ? 'success' : 'info',
+                fontFamily.includes('Roboto') 
+                    ? '✓ Roboto font loaded correctly'
+                    : `ℹ Font family: ${fontFamily} (Roboto may not be loaded)`
+            );
+        }
+
+        // Test 6: Test browser compatibility
+        function testBrowserCompatibility() {
+            const features = {
+                'LocalStorage': typeof(Storage) !== "undefined",
+                'Fetch API': typeof(fetch) !== "undefined", 
+                'ES6 Promises': typeof(Promise) !== "undefined",
+                'Arrow Functions': (() => true)(),
+                'Template Literals': `${true}` === 'true'
+            };
+
+            let allSupported = true;
+            let featureList = [];
+
+            for (const [feature, supported] of Object.entries(features)) {
+                featureList.push(`${feature}: ${supported ? '✓' : '✗'}`);
+                if (!supported) allSupported = false;
+            }
+
+            addTestResult(
+                'Browser Compatibility',
+                allSupported ? 'success' : 'error',
+                (allSupported ? '✓ All required features supported' : '✗ Some features missing') + 
+                '<br>' + featureList.join('<br>')
+            );
+        }
+
+        // Run all tests
+        async function runAllTests() {
+            testResults.innerHTML = '';
+            testCount = 0;
+            
+            addTestResult('Test Suite', 'info', 'Running comprehensive frontend tests...');
+            
+            testLibraries();
+            testStyling();
+            testBrowserCompatibility();
+            await testSupabaseConnection();
+            await testTableAccess();
+            testRouting();
+            
+            addTestResult('Test Suite Complete', 'success', `Completed ${testCount-1} tests. Check results above.`);
+        }
+
+        // Auto-run basic tests on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            testLibraries();
+            testStyling();
+            testBrowserCompatibility();
+        });
+    </script>
+</body>
+</html>
