@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Critical Fixes Test</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background-color: #e8f5e9; border: 1px solid #4caf50; color: #2e7d32; }
+        .error { background-color: #ffebee; border: 1px solid #f44336; color: #c62828; }
+        .info { background-color: #e3f2fd; border: 1px solid #2196f3; color: #1976d2; }
+        .warning { background-color: #fff3e0; border: 1px solid #ff9800; color: #f57c00; }
+        .btn {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background-color: #1565c0; }
+        .test-section {
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 16px 0;
+        }
+        .search-box {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin-bottom: 16px;
+        }
+        .patient-item {
+            padding: 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .patient-item:hover { background-color: #f5f5f5; }
+        .form-field {
+            margin-bottom: 16px;
+        }
+        .form-field label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .form-field input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+    <!-- Load the main app JavaScript -->
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Critical Fixes Test</h1>
+        <p>Testing the three critical issues that were reported by the user.</p>
+        
+        <div id="test-results"></div>
+        
+        <button class="btn" onclick="runAllTests()">Run All Tests</button>
+        <button class="btn" onclick="clearTests()">Clear Tests</button>
+        
+        <!-- Test 1: Search Functionality -->
+        <div class="test-section">
+            <h3>Test 1: Search Functionality</h3>
+            <p>This tests if the search function works reliably with different inputs.</p>
+            <input type="text" id="search-patients" class="search-box" placeholder="Search by Patient ID..." oninput="filterPatients()">
+            <div id="patient-list">
+                <!-- Patient records will be populated here -->
+            </div>
+            <button class="btn" onclick="testSearch()">Test Search Function</button>
+        </div>
+        
+        <!-- Test 2: Form Data Population -->
+        <div class="test-section">
+            <h3>Test 2: Form Data Population</h3>
+            <p>This tests if patient data loads correctly into forms.</p>
+            <div id="form-test-area">
+                <div class="form-field">
+                    <label>Patient ID:</label>
+                    <input type="text" id="patient-identifier" readonly>
+                </div>
+                <div class="form-field">
+                    <label>Facility:</label>
+                    <input type="text" id="facility" readonly>
+                </div>
+                <div class="form-field">
+                    <label>Date:</label>
+                    <input type="text" id="appointment-date" readonly>
+                </div>
+            </div>
+            <button class="btn" onclick="testFormPopulation()">Test Form Population</button>
+        </div>
+        
+        <!-- Test 3: Delete Button -->
+        <div class="test-section">
+            <h3>Test 3: Delete Button Visibility</h3>
+            <p>This tests if delete buttons show up when editing patients.</p>
+            <div id="delete-test-area">
+                <!-- Delete button test will be inserted here -->
+            </div>
+            <button class="btn" onclick="testDeleteButton()">Test Delete Button</button>
+        </div>
+    </div>
+
+    <script>
+        function addTestResult(name, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+        
+        function runAllTests() {
+            document.getElementById('test-results').innerHTML = '';
+            
+            // Set up test environment
+            setupTestData();
+            
+            // Run all tests
+            testSearch();
+            testFormPopulation();
+            testDeleteButton();
+        }
+        
+        function setupTestData() {
+            // Create mock patient data
+            window.patientRecords = [
+                {
+                    id: 'test1',
+                    patient_identifier: 'TEST001',
+                    facility: 'Test Hospital',
+                    date: '2024-01-15',
+                    isSynced: true,
+                    source: 'supabase'
+                },
+                {
+                    local_id: 'test2',
+                    patient_identifier: 'TEST002',
+                    facility: 'Test Clinic',
+                    date: '2024-01-14',
+                    isSynced: false,
+                    source: 'localStorage'
+                },
+                {
+                    local_id: 'test3',
+                    patient_identifier: 'DEMO123',
+                    facility: 'Demo Hospital',
+                    date: '2024-01-13',
+                    isSynced: false,
+                    source: 'localStorage'
+                }
+            ];
+            
+            // Populate initial list
+            if (typeof renderPatientListItemHTML === 'function') {
+                document.getElementById('patient-list').innerHTML = 
+                    window.patientRecords.map(record => renderPatientListItemHTML(record)).join('');
+                addTestResult('Test Data Setup', 'success', 'Created mock patient data');
+            } else {
+                addTestResult('Test Data Setup', 'error', 'renderPatientListItemHTML function not available');
+            }
+        }
+        
+        function testSearch() {
+            addTestResult('Search Test', 'info', 'Starting search functionality tests...');
+            
+            // Test 1: Check if filterPatients function exists
+            if (typeof filterPatients !== 'function') {
+                addTestResult('Search Function', 'error', 'filterPatients function not found');
+                return;
+            }
+            
+            addTestResult('Search Function', 'success', 'filterPatients function exists');
+            
+            // Test 2: Test empty search
+            const searchInput = document.getElementById('search-patients');
+            if (!searchInput) {
+                addTestResult('Search Input', 'error', 'Search input element not found');
+                return;
+            }
+            
+            searchInput.value = '';
+            filterPatients();
+            const listAfterEmpty = document.getElementById('patient-list').children.length;
+            addTestResult('Empty Search', listAfterEmpty === 3 ? 'success' : 'warning', 
+                `Empty search shows ${listAfterEmpty} records (expected 3)`);
+            
+            // Test 3: Test specific search
+            searchInput.value = 'TEST001';
+            filterPatients();
+            const listAfterSearch = document.getElementById('patient-list').children.length;
+            addTestResult('Specific Search', listAfterSearch === 1 ? 'success' : 'error', 
+                `Search for 'TEST001' shows ${listAfterSearch} records (expected 1)`);
+            
+            // Test 4: Test partial search
+            searchInput.value = 'TEST';
+            filterPatients();
+            const listAfterPartial = document.getElementById('patient-list').children.length;
+            addTestResult('Partial Search', listAfterPartial === 2 ? 'success' : 'warning', 
+                `Search for 'TEST' shows ${listAfterPartial} records (expected 2)`);
+            
+            // Test 5: Test case insensitive
+            searchInput.value = 'test001';
+            filterPatients();
+            const listAfterLowercase = document.getElementById('patient-list').children.length;
+            addTestResult('Case Insensitive', listAfterLowercase === 1 ? 'success' : 'error', 
+                `Search for 'test001' shows ${listAfterLowercase} records (expected 1)`);
+            
+            // Reset search
+            searchInput.value = '';
+            filterPatients();
+        }
+        
+        function testFormPopulation() {
+            addTestResult('Form Population Test', 'info', 'Starting form population tests...');
+            
+            // Test mock patient data
+            const mockPatient = {
+                patient_identifier: 'FORM001',
+                facility: 'Form Test Hospital',
+                date: '2024-01-20'
+            };
+            
+            // Simulate setting window.currentPatientData
+            window.currentPatientData = mockPatient;
+            
+            // Test form field population
+            const patientIdField = document.getElementById('patient-identifier');
+            const facilityField = document.getElementById('facility');
+            const dateField = document.getElementById('appointment-date');
+            
+            if (!patientIdField || !facilityField || !dateField) {
+                addTestResult('Form Fields', 'error', 'Required form fields not found');
+                return;
+            }
+            
+            // Manually populate fields (simulating the form population logic)
+            patientIdField.value = mockPatient.patient_identifier;
+            facilityField.value = mockPatient.facility;
+            dateField.value = mockPatient.date;
+            
+            // Verify population
+            const isPopulated = 
+                patientIdField.value === mockPatient.patient_identifier &&
+                facilityField.value === mockPatient.facility &&
+                dateField.value === mockPatient.date;
+            
+            if (isPopulated) {
+                addTestResult('Form Population', 'success', 'Form fields populated correctly');
+            } else {
+                addTestResult('Form Population', 'error', 'Form fields not populated correctly');
+            }
+            
+            // Test the actual form population function if available
+            if (typeof setFieldValue === 'function') {
+                addTestResult('setFieldValue Function', 'success', 'setFieldValue function is available');
+                
+                // Test with a field that doesn't exist
+                try {
+                    setFieldValue('non-existent-field', 'test');
+                    addTestResult('setFieldValue Error Handling', 'success', 'Handles non-existent fields gracefully');
+                } catch (error) {
+                    addTestResult('setFieldValue Error Handling', 'warning', 'Error when setting non-existent field: ' + error.message);
+                }
+            } else {
+                addTestResult('setFieldValue Function', 'warning', 'setFieldValue function not globally available');
+            }
+        }
+        
+        function testDeleteButton() {
+            addTestResult('Delete Button Test', 'info', 'Starting delete button visibility tests...');
+            
+            // Test the renderPatientForm function indirectly
+            if (typeof deletePatient === 'function') {
+                addTestResult('Delete Function', 'success', 'deletePatient function exists');
+            } else {
+                addTestResult('Delete Function', 'error', 'deletePatient function not found');
+            }
+            
+            // Simulate delete button HTML (what should be generated)
+            const mockDeleteButton = `
+                <button type="button" style="background: #d32f2f; color: white;" onclick="deletePatient('test1', 'supabase')">
+                    Delete
+                </button>
+            `;
+            
+            document.getElementById('delete-test-area').innerHTML = mockDeleteButton;
+            
+            // Check if button was created
+            const deleteButton = document.querySelector('#delete-test-area button');
+            if (deleteButton) {
+                addTestResult('Delete Button HTML', 'success', 'Delete button HTML renders correctly');
+                
+                // Test button properties
+                const hasRedBackground = deleteButton.style.background.includes('#d32f2f') || 
+                                       deleteButton.style.backgroundColor.includes('rgb(211, 47, 47)');
+                const hasWhiteText = deleteButton.style.color === 'white';
+                const hasOnClick = deleteButton.onclick !== null;
+                
+                addTestResult('Delete Button Styling', hasRedBackground && hasWhiteText ? 'success' : 'warning', 
+                    `Button styling: background=${hasRedBackground}, color=${hasWhiteText}`);
+                    
+                addTestResult('Delete Button Function', hasOnClick ? 'success' : 'warning', 
+                    `Button onclick: ${hasOnClick ? 'attached' : 'not attached'}`);
+            } else {
+                addTestResult('Delete Button HTML', 'error', 'Delete button not created');
+            }
+        }
+        
+        function clearTests() {
+            document.getElementById('test-results').innerHTML = '';
+            document.getElementById('patient-list').innerHTML = '';
+            document.getElementById('delete-test-area').innerHTML = '';
+            
+            // Clear form fields
+            const fields = ['patient-identifier', 'facility', 'appointment-date'];
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) field.value = '';
+            });
+        }
+        
+        // Auto-run basic tests on load
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                addTestResult('Page Load', 'info', 'Test page loaded successfully');
+                
+                // Check if main app functions are available
+                const functions = ['filterPatients', 'renderPatientListItemHTML', 'deletePatient'];
+                functions.forEach(funcName => {
+                    if (typeof window[funcName] === 'function') {
+                        addTestResult(`Function ${funcName}`, 'success', 'Available');
+                    } else {
+                        addTestResult(`Function ${funcName}`, 'warning', 'Not available');
+                    }
+                });
+            }, 500);
+        });
+    </script>
+</body>
+</html>

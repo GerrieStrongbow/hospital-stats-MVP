@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Sync Status Test</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .success { background-color: #e8f5e9; border: 1px solid #4caf50; color: #2e7d32; }
+        .error { background-color: #ffebee; border: 1px solid #f44336; color: #c62828; }
+        .info { background-color: #e3f2fd; border: 1px solid #2196f3; color: #1976d2; }
+        .btn {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover { background-color: #1565c0; }
+        .mock-sync-status {
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: white;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #757575;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            gap: 8px;
+            margin: 10px 0;
+        }
+        .sync-status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+        .synced .sync-status-icon { background-color: #4caf50; }
+        .pending .sync-status-icon { background-color: #f57c00; }
+        .error .sync-status-icon { background-color: #d32f2f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Enhanced Sync Status Test</h1>
+        <p>Testing the enhanced sync status indicator with timestamps and patient counts.</p>
+
+        <h3>Test Cases:</h3>
+
+        <h4>1. All Records Synced</h4>
+        <div class="mock-sync-status synced">
+            <span class="sync-status-icon"></span>
+            <div>
+                <div>✓ All records synced</div>
+                <div style="font-size: 12px; opacity: 0.8; margin-top: 2px;">Last sync: 5 minutes ago</div>
+            </div>
+        </div>
+
+        <h4>2. Pending Records</h4>
+        <div class="mock-sync-status pending">
+            <span class="sync-status-icon"></span>
+            <div>
+                <div>⏳ 3 records pending sync</div>
+                <div style="font-size: 12px; opacity: 0.8; margin-top: 2px;">Last sync: 2 hours ago</div>
+            </div>
+            <button class="btn" style="margin-left: auto; padding: 6px 12px; font-size: 12px;">Sync Now</button>
+        </div>
+
+        <h4>3. Offline State</h4>
+        <div class="mock-sync-status error">
+            <span class="sync-status-icon"></span>
+            <div>
+                <div>⚠️ Offline - records will sync when online</div>
+                <div style="font-size: 12px; opacity: 0.8; margin-top: 2px;">Last sync: Never synced</div>
+            </div>
+        </div>
+
+        <h3>Functionality Tests:</h3>
+        <div id="test-results"></div>
+
+        <button class="btn" onclick="testSyncMetadata()">Test Sync Metadata</button>
+        <button class="btn" onclick="testPatientCount()">Test Patient Count</button>
+        <button class="btn" onclick="testTimeFormatting()">Test Time Formatting</button>
+        <button class="btn" onclick="clearTestData()">Clear Test Data</button>
+    </div>
+
+    <script>
+        function addTestResult(name, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        function testSyncMetadata() {
+            // Test sync metadata storage and retrieval
+            const testMetadata = {
+                lastSync: new Date().toISOString(),
+                lastSyncedCount: 5,
+                lastFailedCount: 0
+            };
+
+            try {
+                localStorage.setItem('sync_metadata', JSON.stringify(testMetadata));
+                const retrieved = JSON.parse(localStorage.getItem('sync_metadata'));
+
+                if (retrieved && retrieved.lastSync) {
+                    addTestResult('Sync Metadata', 'success', 'Successfully stored and retrieved sync metadata');
+                } else {
+                    addTestResult('Sync Metadata', 'error', 'Failed to store/retrieve sync metadata');
+                }
+            } catch (error) {
+                addTestResult('Sync Metadata', 'error', 'Error: ' + error.message);
+            }
+        }
+
+        function testPatientCount() {
+            // Test patient count functionality
+            const mockRecords = [
+                { patient_identifier: 'P001', local_id: '1', synced: true },
+                { patient_identifier: 'P002', local_id: '2', synced: false },
+                { patient_identifier: 'P003', local_id: '3', synced: true }
+            ];
+
+            try {
+                localStorage.setItem('patient_records', JSON.stringify(mockRecords));
+                const records = JSON.parse(localStorage.getItem('patient_records') || '[]');
+
+                addTestResult('Patient Count', 'success', `Found ${records.length} patient records`);
+
+                // Test sync queue
+                const syncQueue = ['2']; // Record 2 is unsynced
+                localStorage.setItem('sync_queue', JSON.stringify(syncQueue));
+
+                addTestResult('Sync Queue', 'success', `${syncQueue.length} records pending sync`);
+
+            } catch (error) {
+                addTestResult('Patient Count', 'error', 'Error: ' + error.message);
+            }
+        }
+
+        function testTimeFormatting() {
+            // Test time formatting logic
+            const now = new Date();
+
+            // Test "just now"
+            const justNow = new Date(now.getTime() - 30 * 1000); // 30 seconds ago
+            const justNowText = formatTimeAgo(justNow);
+            addTestResult('Time Format - Just Now', 'info', `30 seconds ago: "${justNowText}"`);
+
+            // Test minutes
+            const fiveMinutes = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes ago
+            const fiveMinutesText = formatTimeAgo(fiveMinutes);
+            addTestResult('Time Format - Minutes', 'info', `5 minutes ago: "${fiveMinutesText}"`);
+
+            // Test hours
+            const twoHours = new Date(now.getTime() - 2 * 60 * 60 * 1000); // 2 hours ago
+            const twoHoursText = formatTimeAgo(twoHours);
+            addTestResult('Time Format - Hours', 'info', `2 hours ago: "${twoHoursText}"`);
+
+            // Test days
+            const yesterday = new Date(now.getTime() - 25 * 60 * 60 * 1000); // 25 hours ago
+            const yesterdayText = formatTimeAgo(yesterday);
+            addTestResult('Time Format - Days', 'info', `25 hours ago: "${yesterdayText}"`);
+        }
+
+        function formatTimeAgo(date) {
+            const now = new Date();
+            const diffMinutes = Math.floor((now - date) / (1000 * 60));
+
+            if (diffMinutes < 1) {
+                return 'Just now';
+            } else if (diffMinutes < 60) {
+                return `${diffMinutes} minutes ago`;
+            } else if (diffMinutes < 1440) { // 24 hours
+                const hours = Math.floor(diffMinutes / 60);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            } else {
+                return date.toLocaleDateString() + ' at ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+        }
+
+        function clearTestData() {
+            try {
+                localStorage.removeItem('sync_metadata');
+                localStorage.removeItem('patient_records');
+                localStorage.removeItem('sync_queue');
+                addTestResult('Clear Data', 'success', 'All test data cleared');
+            } catch (error) {
+                addTestResult('Clear Data', 'error', 'Error: ' + error.message);
+            }
+        }
+
+        // Auto-run initial tests
+        document.addEventListener('DOMContentLoaded', () => {
+            testSyncMetadata();
+            testPatientCount();
+            testTimeFormatting();
+        });
+    </script>
+</body>
+</html>

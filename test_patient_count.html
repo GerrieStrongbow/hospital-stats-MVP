@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Count Test</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .success {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+
+        .error {
+            background-color: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+
+        .info {
+            background-color: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1976d2;
+        }
+
+        .btn {
+            background-color: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            background-color: #1565c0;
+        }
+    </style>
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- App Configuration -->
+    <script src="config.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Patient Count Test</h1>
+        <p>This page tests if the patient count is correctly fetched from Supabase vs localStorage.</p>
+        <div id="test-results"></div>
+        <button class="btn" type="button" onclick="testPatientCount()">Test Patient Count</button>
+        <button class="btn" type="button" onclick="testSupabaseQuery()">Test Direct Supabase Query</button>
+        <button class="btn" onclick="clearLocalStorage()">Clear localStorage</button>
+    </div>
+
+    <script>
+        // Initialize Supabase (simplified version)
+        async function initSupabase() {
+            const config = window.APP_CONFIG || {
+                SUPABASE_URL: 'https://qnipfhctucuvqbpazmbh.supabase.co',
+                SUPABASE_ANON_KEY: ''
+            };
+
+            if (!config.SUPABASE_ANON_KEY) {
+                addTestResult('Supabase Init', 'error', 'No API key configured');
+                return null;
+            }
+
+            try {
+                return supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+            } catch (error) {
+                addTestResult('Supabase Init', 'error', 'Failed to create client: ' + error.message);
+                return null;
+            }
+        }
+
+        function addTestResult(name, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-result ${status}`;
+            div.innerHTML = `<strong>${name}:</strong> ${message}`;
+            document.getElementById('test-results').appendChild(div);
+        }
+
+        async function testPatientCount() {
+            const client = await initSupabase();
+            if (!client) return;
+
+            // Simulate being logged in (you'll need to be logged in for this to work)
+            try {
+                const { data: { session } } = await client.auth.getSession();
+
+                if (!session) {
+                    addTestResult('Auth Check', 'error', 'Not logged in. Please login first via index.html');
+                    return;
+                }
+
+                addTestResult('Auth Check', 'success', `Logged in as: ${session.user.email}`);
+
+                // Test localStorage count
+                const localRecords = JSON.parse(localStorage.getItem('patient_records') || '[]');
+                addTestResult('localStorage Count', 'info', `${localRecords.length} records in localStorage`);
+
+                // Test Supabase count
+                const { count, error } = await client
+                    .from('patient_records')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', session.user.id);
+
+                if (error) {
+                    addTestResult('Supabase Count', 'error', 'Error: ' + error.message);
+                } else {
+                    addTestResult('Supabase Count', 'success', `${count} records in Supabase for this user`);
+                }
+
+                // Compare counts
+                if (count !== localRecords.length) {
+                    addTestResult('Count Comparison', 'info', `Mismatch: Supabase(${count}) vs localStorage(${localRecords.length})`);
+                } else {
+                    addTestResult('Count Comparison', 'success', 'Counts match!');
+                }
+
+            } catch (error) {
+                addTestResult('Test Error', 'error', error.message);
+            }
+        }
+
+        async function testSupabaseQuery() {
+            const client = await initSupabase();
+            if (!client) return;
+
+            try {
+                const { data: { session } } = await client.auth.getSession();
+                if (!session) {
+                    addTestResult('Direct Query', 'error', 'Not logged in');
+                    return;
+                }
+
+                // Get actual records
+                const { data: records, error } = await client
+                    .from('patient_records')
+                    .select('patient_identifier, created_at')
+                    .eq('user_id', session.user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(5);
+
+                if (error) {
+                    addTestResult('Direct Query', 'error', 'Error: ' + error.message);
+                } else {
+                    addTestResult('Direct Query', 'success', `Found ${records.length} records`);
+                    if (records.length > 0) {
+                        const recordList = records.map(r => `${r.patient_identifier} (${new Date(r.created_at).toLocaleDateString()})`).join(', ');
+                        addTestResult('Recent Records', 'info', recordList);
+                    }
+                }
+
+            } catch (error) {
+                addTestResult('Direct Query Error', 'error', error.message);
+            }
+        }
+
+        function clearLocalStorage() {
+            try {
+                localStorage.removeItem('patient_records');
+                localStorage.removeItem('sync_queue');
+                localStorage.removeItem('sync_metadata');
+                addTestResult('Clear localStorage', 'success', 'localStorage cleared');
+            } catch (error) {
+                addTestResult('Clear localStorage', 'error', error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>
