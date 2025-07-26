@@ -307,6 +307,50 @@ Successfully implemented a comprehensive patient record form with advanced valid
 - [x] Create sync status indicator and manual sync button
 - [x] Show patient count and last sync timestamp
 
+### URGENT: Code Refactoring Required (Session End - 2024-07-26):
+**🚨 PRIORITY 1: File structure has become unmaintainable**
+
+**Current Problem:**
+- `app.js`: ~2000+ lines (way too large for debugging and maintenance)
+- `styles.css`: ~600+ lines (also getting unwieldy)
+- Monolithic structure making debugging difficult
+- Function scope and event binding issues likely caused by file size
+- Hard to isolate and fix specific functionality
+
+**Proposed Refactoring Plan:**
+```
+js/
+├── app.js                 # Main initialization only (~50-100 lines)
+├── auth.js                # Login/register/logout functions  
+├── patient-management.js  # Patient form, list, CRUD operations
+├── sync-storage.js        # localStorage/Supabase sync operations
+├── router.js              # Navigation and routing logic
+└── utils.js               # Shared utility functions
+
+css/
+├── main.css               # Base styles and CSS variables
+├── components.css         # Buttons, forms, cards, lists
+├── layout.css             # Grid, containers, mobile responsive
+└── pages.css              # Page-specific styles
+```
+
+**Benefits:**
+1. **Easier Debugging**: Isolate issues to specific modules
+2. **Better Function Scope**: Prevent global namespace pollution
+3. **Cleaner Event Binding**: Organize event listeners by feature
+4. **Improved Maintainability**: Find and fix code faster
+5. **Professional Structure**: Better foundation even for MVP
+
+**Implementation:**
+- Use simple `<script>` tags (no build tools needed)
+- Maintain current functionality while improving organization
+- Test each module as it's extracted to ensure nothing breaks
+
+**Why This Should Be Done First:**
+- Current critical issues (search, navigation, delete) may be caused by the unwieldy file structure
+- Refactoring will make debugging these issues much easier
+- Better to fix structure before adding more functionality
+
 ### Critical Issues Identified (Session End - 2024-07-26):
 **⚠️ URGENT: Core functionality still not working despite debugging attempts**
 
