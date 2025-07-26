@@ -212,16 +212,115 @@ function renderLogin() {
     `;
 }
 
-// Register page (placeholder - will be implemented in Phase 3)
+// Register page
 function renderRegister() {
+    const subDistricts = [
+        'Breede Valley',
+        'Drakenstein', 
+        'Langeberg',
+        'Stellenbosch',
+        'Witzenberg'
+    ];
+    
+    const therapistTypes = [
+        'Physiotherapist',
+        'Occupational Therapist',
+        'Speech Therapist',
+        'Audiologist'
+    ];
+    
+    const employmentStatuses = [
+        'Full-time',
+        'Community Service',
+        'Student'
+    ];
+    
     return `
         <div class="container">
-            <div class="card" style="max-width: 500px; margin: 40px auto;">
+            <div class="card" style="max-width: 600px; margin: 40px auto;">
                 <h2 class="text-center mb-4">Register</h2>
-                <p class="text-center text-secondary">Registration form will be implemented in Phase 3</p>
-                <button class="btn btn-secondary btn-block" onclick="router.navigate('login')">
-                    Back to Login
-                </button>
+                <form id="register-form">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            <input type="text" class="form-input" name="firstName" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" class="form-input" name="lastName" required>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" name="email" 
+                               pattern="[a-zA-Z0-9._%+-]+@westerncape\\.gov\\.za$" 
+                               placeholder="username@westerncape.gov.za" required>
+                        <small style="color: var(--text-secondary); font-size: 12px;">
+                            Must be a @westerncape.gov.za email address
+                        </small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Therapist Type</label>
+                        <select class="form-input" name="therapistType" required>
+                            <option value="">Select therapist type</option>
+                            ${therapistTypes.map(type => 
+                                `<option value="${type}">${type}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Employment Status</label>
+                        <select class="form-input" name="employmentStatus" required>
+                            <option value="">Select employment status</option>
+                            ${employmentStatuses.map(status => 
+                                `<option value="${status.toLowerCase().replace(' ', '-')}">${status}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Sub-district</label>
+                        <select class="form-input" name="subDistrict" required>
+                            <option value="">Select sub-district</option>
+                            ${subDistricts.map(district => 
+                                `<option value="${district}">${district}</option>`
+                            ).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <div class="password-group">
+                            <input type="password" class="form-input" name="password" 
+                                   minlength="6" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <div class="password-group">
+                            <input type="password" class="form-input" name="confirmPassword" 
+                                   minlength="6" required>
+                            <button type="button" class="password-toggle" onclick="togglePassword(this)">
+                                👁
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Register
+                    </button>
+                </form>
+                <p class="text-center mt-3">
+                    Already have an account? 
+                    <a href="#" onclick="router.navigate('login'); return false;">Sign In</a>
+                </p>
             </div>
         </div>
     `;
@@ -317,15 +416,141 @@ function attachEventListeners(viewName) {
             loginForm.addEventListener('submit', handleLogin);
         }
     }
-    // Add more conditions as we implement features
+    if (viewName === 'register') {
+        const registerForm = document.getElementById('register-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', handleRegister);
+        }
+    }
 }
 
-// Login handler (placeholder - will be implemented properly in Phase 3)
+// Login handler
 async function handleLogin(e) {
     e.preventDefault();
     
-    // For now, just show a message
-    showError('Login functionality will be implemented in Phase 3');
+    if (!app.supabase) {
+        showError('Database connection not available. Please check your connection.');
+        return;
+    }
+    
+    const formData = new FormData(e.target);
+    const email = formData.get('email');
+    const password = formData.get('password');
+    
+    showLoading(true);
+    
+    try {
+        const { data, error } = await app.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+        
+        if (error) throw error;
+        
+        app.currentUser = data.user;
+        
+        // Load user profile
+        const { data: profile } = await app.supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', data.user.id)
+            .single();
+        
+        if (profile) {
+            app.currentUser.profile = profile;
+        }
+        
+        router.navigate('dashboard');
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showError(error.message || 'Failed to sign in. Please check your credentials.');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// Register handler
+async function handleRegister(e) {
+    e.preventDefault();
+    
+    if (!app.supabase) {
+        showError('Database connection not available. Please check your connection.');
+        return;
+    }
+    
+    const formData = new FormData(e.target);
+    const firstName = formData.get('firstName');
+    const lastName = formData.get('lastName');
+    const email = formData.get('email');
+    const therapistType = formData.get('therapistType');
+    const employmentStatus = formData.get('employmentStatus');
+    const subDistrict = formData.get('subDistrict');
+    const password = formData.get('password');
+    const confirmPassword = formData.get('confirmPassword');
+    
+    // Validate email domain
+    if (!email.endsWith('@westerncape.gov.za')) {
+        showError('Email must be a @westerncape.gov.za address');
+        return;
+    }
+    
+    // Validate passwords match
+    if (password !== confirmPassword) {
+        showError('Passwords do not match');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        // Register user with Supabase Auth
+        const { data: authData, error: authError } = await app.supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: {
+                    first_name: firstName,
+                    last_name: lastName
+                }
+            }
+        });
+        
+        if (authError) throw authError;
+        
+        // Create user profile
+        const { error: profileError } = await app.supabase
+            .from('user_profiles')
+            .insert([{
+                id: authData.user.id,
+                first_name: firstName,
+                last_name: lastName,
+                email: email,
+                therapist_type: therapistType,
+                employment_status: employmentStatus,
+                sub_district: subDistrict
+            }]);
+        
+        if (profileError) {
+            console.error('Profile creation error:', profileError);
+            // Don't throw here - user is created but profile failed
+            // We can handle this gracefully
+        }
+        
+        // Show success message
+        showError('Registration successful! Please check your email to verify your account, then sign in.');
+        
+        // Navigate to login after 3 seconds
+        setTimeout(() => {
+            router.navigate('login');
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        showError(error.message || 'Failed to register. Please try again.');
+    } finally {
+        showLoading(false);
+    }
 }
 
 // Online/offline detection
@@ -368,6 +593,17 @@ window.addEventListener('DOMContentLoaded', async () => {
             const { data: { session } } = await app.supabase.auth.getSession();
             if (session) {
                 app.currentUser = session.user;
+                
+                // Load user profile
+                const { data: profile } = await app.supabase
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', session.user.id)
+                    .single();
+                
+                if (profile) {
+                    app.currentUser.profile = profile;
+                }
             }
         } catch (error) {
             console.log('Session check failed:', error);
