@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Fix Test - Patient List Module</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .mock-patient-list { border: 1px solid #ddd; padding: 10px; margin: 10px 0; }
+        .list-item { padding: 8px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .empty-state { text-align: center; color: #666; padding: 20px; }
+        #search-patients { width: 100%; padding: 8px; margin-bottom: 10px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Search Fix Test - Patient List Module</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Mock Patient List UI -->
+    <div class="test-section">
+        <h3>Mock Patient List (Test Search Here)</h3>
+        <input type="text" id="search-patients" placeholder="Search by Patient ID...">
+        <div id="patient-list" class="mock-patient-list">
+            <!-- Will be populated by test -->
+        </div>
+    </div>
+    
+    <div id="console-output">
+        <h3>Console Output:</h3>
+        <pre id="console-log"></pre>
+    </div>
+    
+    <!-- Load modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/ui/router.js"></script>
+    <script src="js/patient/patient-list.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleLog = document.getElementById('console-log');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            consoleLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        // Mock data
+        const mockPatients = [
+            {
+                id: 'mock1',
+                patient_identifier: 'PATIENT001',
+                facility: 'Test Hospital',
+                date: '2024-01-15',
+                syncStatus: 'synced',
+                source: 'supabase'
+            },
+            {
+                local_id: 'mock2',
+                patient_identifier: 'PATIENT002',
+                facility: 'Test Clinic',
+                date: '2024-01-16',
+                syncStatus: 'pending',
+                source: 'localStorage'
+            },
+            {
+                id: 'mock3',
+                patient_identifier: 'ABC123',
+                facility: 'Community Health',
+                date: '2024-01-17',
+                syncStatus: 'synced',
+                source: 'supabase'
+            }
+        ];
+        
+        function runTests() {
+            const results = document.getElementById('test-results');
+            
+            function addTest(name, passed, details = '') {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-section';
+                testDiv.innerHTML = `
+                    <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                    ${details ? `<div class="info">${details}</div>` : ''}
+                `;
+                results.appendChild(testDiv);
+            }
+            
+            // Test 1: PatientList module loaded
+            addTest(
+                'PatientList Module Loaded',
+                typeof window.PatientList !== 'undefined',
+                window.PatientList ? 'PatientList object available with methods: ' + 
+                    Object.keys(window.PatientList).filter(k => typeof window.PatientList[k] === 'function').join(', ') : 
+                    'PatientList module not found'
+            );
+            
+            if (!window.PatientList) {
+                addTest('Overall Test Result', false, 'Cannot continue tests without PatientList module');
+                return;
+            }
+            
+            // Test 2: Mock the patient records
+            window.PatientList.patientRecords = mockPatients;
+            window.PatientList.isLoaded = true;
+            
+            // Populate initial list
+            const listContainer = document.getElementById('patient-list');
+            listContainer.innerHTML = mockPatients.map(record => {
+                const syncIcon = record.syncStatus === 'synced' ? '✓' : '⏳';
+                const recordId = record.id || record.local_id;
+                return `
+                    <div class="list-item">
+                        <strong>${record.patient_identifier}</strong> - ${record.facility} ${syncIcon}
+                    </div>
+                `;
+            }).join('');
+            
+            addTest(
+                'Mock Data Setup',
+                window.PatientList.patientRecords.length === 3,
+                `Setup ${window.PatientList.patientRecords.length} mock patient records`
+            );
+            
+            // Test 3: Search input binding
+            const searchInput = document.getElementById('search-patients');
+            addTest(
+                'Search Input Element Found',
+                searchInput !== null,
+                searchInput ? 'Search input element available' : 'Search input not found'
+            );
+            
+            // Test 4: Test search functionality
+            let searchWorked = false;
+            
+            // Override renderFilteredRecords to capture search results
+            const originalRender = window.PatientList.renderFilteredRecords;
+            let lastFilteredRecords = [];
+            
+            window.PatientList.renderFilteredRecords = function(records, searchTerm) {
+                lastFilteredRecords = records;
+                searchWorked = true;
+                
+                // Update the mock display
+                const listContainer = document.getElementById('patient-list');
+                if (records.length === 0) {
+                    listContainer.innerHTML = '<div class="empty-state">No matching Patient ID found</div>';
+                } else {
+                    listContainer.innerHTML = records.map(record => {
+                        const syncIcon = record.syncStatus === 'synced' ? '✓' : '⏳';
+                        return `
+                            <div class="list-item">
+                                <strong>${record.patient_identifier}</strong> - ${record.facility} ${syncIcon}
+                            </div>
+                        `;
+                    }).join('');
+                }
+                
+                console.log('Search rendered', records.length, 'results for term:', searchTerm);
+            };
+            
+            // Test search for "PATIENT"
+            setTimeout(() => {
+                console.log('Testing search for "PATIENT"...');
+                searchInput.value = 'PATIENT';
+                
+                // Trigger input event
+                const inputEvent = new Event('input', { bubbles: true });
+                searchInput.dispatchEvent(inputEvent);
+                
+                setTimeout(() => {
+                    addTest(
+                        'Search Event Triggered',
+                        searchWorked,
+                        searchWorked ? `Search processed successfully, found ${lastFilteredRecords.length} records` : 
+                            'Search event not triggered or processed'
+                    );
+                    
+                    addTest(
+                        'Search Filtering Works',
+                        lastFilteredRecords.length === 2,
+                        `Expected 2 records with "PATIENT" in ID, got ${lastFilteredRecords.length}`
+                    );
+                    
+                    // Test search for specific ID
+                    searchWorked = false;
+                    console.log('Testing search for "ABC123"...');
+                    searchInput.value = 'ABC123';
+                    searchInput.dispatchEvent(inputEvent);
+                    
+                    setTimeout(() => {
+                        addTest(
+                            'Specific ID Search',
+                            lastFilteredRecords.length === 1 && lastFilteredRecords[0].patient_identifier === 'ABC123',
+                            `Searched for "ABC123", found ${lastFilteredRecords.length} records`
+                        );
+                        
+                        // Test empty search (should show all)
+                        console.log('Testing empty search...');
+                        searchInput.value = '';
+                        searchInput.dispatchEvent(inputEvent);
+                        
+                        setTimeout(() => {
+                            addTest(
+                                'Empty Search Shows All',
+                                lastFilteredRecords.length === 3,
+                                `Empty search should show all 3 records, got ${lastFilteredRecords.length}`
+                            );
+                            
+                            // Summary
+                            const allTests = results.querySelectorAll('.test-section h3');
+                            const passedTests = results.querySelectorAll('.test-section h3.pass');
+                            const failedTests = results.querySelectorAll('.test-section h3.fail');
+                            
+                            const summaryDiv = document.createElement('div');
+                            summaryDiv.className = 'test-section';
+                            const successRate = Math.round((passedTests.length / allTests.length) * 100);
+                            summaryDiv.innerHTML = `
+                                <h2>Search Fix Test Summary</h2>
+                                <div class="info">
+                                    <strong>Total Tests:</strong> ${allTests.length}<br>
+                                    <strong class="pass">Passed:</strong> ${passedTests.length}<br>
+                                    <strong class="fail">Failed:</strong> ${failedTests.length}<br>
+                                    <strong>Success Rate:</strong> ${successRate}%<br>
+                                    <strong>Search Fix Status:</strong> ${successRate >= 80 ? '✅ FIXED' : '❌ STILL BROKEN'}
+                                </div>
+                            `;
+                            results.appendChild(summaryDiv);
+                            
+                            console.log('Search fix tests completed - Success rate:', successRate + '%');
+                            
+                        }, 100);
+                    }, 100);
+                }, 100);
+            }, 1000);
+        }
+        
+        // Run tests when page loads
+        setTimeout(runTests, 500);
+    </script>
+</body>
+</html>

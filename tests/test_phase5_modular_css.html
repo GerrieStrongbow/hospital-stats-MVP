@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 5 - Modular CSS Test</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Modular CSS -->
+    <link rel="stylesheet" href="../css/main.css">
+    
+    <style>
+        /* Test layout styles */
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: var(--spacing-lg);
+        }
+        
+        .test-section {
+            margin-bottom: var(--spacing-xxl);
+            padding: var(--spacing-lg);
+            border: 2px solid var(--divider-color);
+            border-radius: var(--radius-md);
+        }
+        
+        .test-title {
+            background-color: var(--primary-color);
+            color: white;
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-lg);
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-medium);
+        }
+        
+        .component-demo {
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            background-color: var(--background-color);
+            border-radius: var(--radius-sm);
+        }
+        
+        .demo-label {
+            font-weight: var(--font-weight-medium);
+            margin-bottom: var(--spacing-sm);
+            color: var(--text-secondary);
+            font-size: var(--font-size-sm);
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <!-- Header Test -->
+        <div class="header">
+            <div class="header-content">
+                <div class="header-brand">
+                    <div class="header-logo">H</div>
+                    Hospital Stats
+                </div>
+                <nav class="header-nav">
+                    <a href="#" class="header-nav-item active">Dashboard</a>
+                    <a href="#" class="header-nav-item">Patients</a>
+                    <a href="#" class="header-nav-item">Reports</a>
+                </nav>
+                <div class="header-actions">
+                    <div class="sync-status synced">
+                        <div class="sync-indicator"></div>
+                        Synced
+                    </div>
+                    <div class="user-menu">
+                        <div class="user-menu-trigger">
+                            <div class="user-avatar">JD</div>
+                            <span class="user-name">John Doe</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="main">
+            <div class="test-container">
+                <h1>Phase 5: Modular CSS Integration Test</h1>
+                <p class="text-secondary">Testing all modular CSS components and responsive design</p>
+
+                <!-- Typography Test -->
+                <div class="test-section">
+                    <div class="test-title">Typography & Base Styles</div>
+                    <h1>Heading 1 - var(--font-size-2xl)</h1>
+                    <h2>Heading 2 - var(--font-size-xl)</h2>
+                    <h3>Heading 3 - var(--font-size-lg)</h3>
+                    <h4>Heading 4 - var(--font-size-base)</h4>
+                    <p>This is a paragraph with base font styling using Roboto font family.</p>
+                    <p class="text-secondary">Secondary text color with proper contrast.</p>
+                    <p class="text-xs">Extra small text</p>
+                    <p class="text-sm">Small text</p>
+                    <p class="text-lg">Large text</p>
+                    <p class="text-xl">Extra large text</p>
+                </div>
+
+                <!-- Button Components Test -->
+                <div class="test-section">
+                    <div class="test-title">Button Components</div>
+                    <div class="component-demo">
+                        <div class="demo-label">Primary Buttons</div>
+                        <button class="btn btn-primary">Primary Button</button>
+                        <button class="btn btn-primary btn-sm">Small Primary</button>
+                        <button class="btn btn-primary btn-lg">Large Primary</button>
+                        <button class="btn btn-primary" disabled>Disabled</button>
+                    </div>
+                    <div class="component-demo">
+                        <div class="demo-label">Button Variations</div>
+                        <button class="btn btn-secondary">Secondary</button>
+                        <button class="btn btn-outline">Outline</button>
+                        <button class="btn btn-text">Text Button</button>
+                        <button class="btn btn-danger">Danger</button>
+                        <button class="btn btn-success">Success</button>
+                    </div>
+                    <div class="component-demo">
+                        <div class="demo-label">Icon & Special Buttons</div>
+                        <button class="btn btn-icon btn-primary">+</button>
+                        <button class="btn btn-primary btn-block">Block Button</button>
+                        <button class="fab">+</button>
+                    </div>
+                </div>
+
+                <!-- Form Components Test -->
+                <div class="test-section">
+                    <div class="test-title">Form Components</div>
+                    <form class="form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label required">First Name</label>
+                                <input type="text" class="form-input" placeholder="Enter first name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label required">Last Name</label>
+                                <input type="text" class="form-input" placeholder="Enter last name">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" placeholder="Enter email address">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Facility</label>
+                            <select class="form-select">
+                                <option value="">Select Facility</option>
+                                <option value="groote-schuur">Groote Schuur Hospital</option>
+                                <option value="tygerberg">Tygerberg Hospital</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Comments</label>
+                            <textarea class="form-textarea" placeholder="Enter comments"></textarea>
+                        </div>
+                        <div class="checkbox-group">
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="cb1">
+                                <label for="cb1">Option 1</label>
+                            </div>
+                            <div class="checkbox-item">
+                                <input type="checkbox" id="cb2">
+                                <label for="cb2">Option 2</label>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Card Components Test -->
+                <div class="test-section">
+                    <div class="test-title">Card Components</div>
+                    <div class="card-grid">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">Basic Card</h3>
+                                <p class="card-subtitle">Card subtitle</p>
+                            </div>
+                            <div class="card-body">
+                                <p>This is the card body content with some text to demonstrate the layout.</p>
+                            </div>
+                            <div class="card-footer">
+                                <span class="text-secondary">Footer content</span>
+                                <button class="btn btn-text">Action</button>
+                            </div>
+                        </div>
+                        
+                        <div class="patient-card">
+                            <div class="patient-header">
+                                <div>
+                                    <h4 class="patient-name">John Smith</h4>
+                                    <p class="patient-age">45 years old</p>
+                                </div>
+                                <span class="patient-status synced">Synced</span>
+                            </div>
+                            <p class="patient-facility">Groote Schuur Hospital</p>
+                            <p class="patient-date">2024-01-15</p>
+                            <div class="patient-actions">
+                                <button class="btn btn-sm btn-outline">View</button>
+                                <button class="btn btn-sm btn-text">Edit</button>
+                            </div>
+                        </div>
+                        
+                        <div class="stats-card">
+                            <div class="stats-number">42</div>
+                            <div class="stats-label">Total Patients</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Components Test -->
+                <div class="test-section">
+                    <div class="test-title">List Components</div>
+                    <div class="list">
+                        <div class="list-item list-item-clickable">
+                            <div class="list-item-content">
+                                <div class="list-item-avatar">JS</div>
+                                <div class="list-item-text">
+                                    <div class="list-item-primary">John Smith</div>
+                                    <div class="list-item-secondary">Added today at Groote Schuur Hospital</div>
+                                    <div class="list-item-meta">Patient ID: PAT001</div>
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="list-item-action">👁️</button>
+                                <button class="list-item-action">✏️</button>
+                            </div>
+                        </div>
+                        <div class="list-item list-item-clickable active">
+                            <div class="list-item-content">
+                                <div class="list-item-avatar">MD</div>
+                                <div class="list-item-text">
+                                    <div class="list-item-primary">Mary Davis</div>
+                                    <div class="list-item-secondary">Added yesterday at Tygerberg Hospital</div>
+                                    <div class="list-item-meta">Patient ID: PAT002</div>
+                                </div>
+                            </div>
+                            <div class="list-item-actions">
+                                <button class="list-item-action">👁️</button>
+                                <button class="list-item-action">✏️</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Layout Test -->
+                <div class="test-section">
+                    <div class="test-title">Layout & Grid System</div>
+                    <div class="component-demo">
+                        <div class="demo-label">Grid System</div>
+                        <div class="grid grid-3 gap-md">
+                            <div class="card">
+                                <div class="card-body">Grid Item 1</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">Grid Item 2</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">Grid Item 3</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="component-demo">
+                        <div class="demo-label">Flex Layout</div>
+                        <div class="flex items-center justify-between gap-md">
+                            <div class="card">
+                                <div class="card-body">Flex Item 1</div>
+                            </div>
+                            <div class="card">
+                                <div class="card-body">Flex Item 2</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dashboard Page Styles Test -->
+                <div class="test-section">
+                    <div class="test-title">Dashboard Components</div>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <span class="stat-number">156</span>
+                            <span class="stat-label">Total Patients</span>
+                            <div class="stat-change positive">+12 this week</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">23</span>
+                            <span class="stat-label">Pending Sync</span>
+                            <div class="stat-change neutral">No change</div>
+                        </div>
+                        <div class="stat-card">
+                            <span class="stat-number">98.5%</span>
+                            <span class="stat-label">Sync Rate</span>
+                            <div class="stat-change positive">+2.1%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <a href="#" class="quick-action">
+                            <div class="quick-action-icon">👤</div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">Add Patient</div>
+                                <div class="quick-action-description">Register a new patient record</div>
+                            </div>
+                        </a>
+                        <a href="#" class="quick-action">
+                            <div class="quick-action-icon">📊</div>
+                            <div class="quick-action-content">
+                                <div class="quick-action-title">View Reports</div>
+                                <div class="quick-action-description">Generate statistical reports</div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Responsive Test Info -->
+                <div class="test-section">
+                    <div class="test-title">Responsive Design Test</div>
+                    <p><strong>Test Instructions:</strong></p>
+                    <ul style="margin-left: var(--spacing-lg); margin-bottom: var(--spacing-md);">
+                        <li>Resize browser window to test responsive breakpoints</li>
+                        <li>Test on mobile devices (576px and below)</li>
+                        <li>Test on tablets (768px to 992px)</li>
+                        <li>Test on desktop (992px and above)</li>
+                        <li>Verify grid layouts adapt properly</li>
+                        <li>Check that form elements are touch-friendly on mobile</li>
+                        <li>Ensure navigation collapses appropriately</li>
+                    </ul>
+                    
+                    <div style="margin-top: var(--spacing-lg); padding: var(--spacing-md); background-color: var(--background-color); border-radius: var(--radius-sm);">
+                        <p><strong>CSS Variables Test:</strong></p>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--spacing-sm); margin-top: var(--spacing-sm);">
+                            <div style="padding: var(--spacing-sm); background-color: var(--primary-color); color: white; border-radius: var(--radius-sm);">Primary Color</div>
+                            <div style="padding: var(--spacing-sm); background-color: var(--accent-color); color: white; border-radius: var(--radius-sm);">Accent Color</div>
+                            <div style="padding: var(--spacing-sm); background-color: var(--error-color); color: white; border-radius: var(--radius-sm);">Error Color</div>
+                            <div style="padding: var(--spacing-sm); background-color: var(--warning-color); color: white; border-radius: var(--radius-sm);">Warning Color</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple interaction test
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test button interactions
+            const buttons = document.querySelectorAll('.btn');
+            buttons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    console.log('Button clicked:', this.textContent);
+                });
+            });
+
+            // Test form validation
+            const form = document.querySelector('.form');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                console.log('Form submitted');
+                alert('Modular CSS test: Form submission works!');
+            });
+
+            // Test responsive feedback
+            function logViewportSize() {
+                const width = window.innerWidth;
+                let breakpoint = 'desktop';
+                if (width <= 576) breakpoint = 'mobile';
+                else if (width <= 768) breakpoint = 'tablet-small';
+                else if (width <= 992) breakpoint = 'tablet-large';
+                
+                console.log(`Viewport: ${width}px (${breakpoint})`);
+            }
+
+            window.addEventListener('resize', logViewportSize);
+            logViewportSize(); // Initial log
+
+            console.log('✅ Phase 5 Modular CSS test loaded successfully');
+            console.log('📱 Resize window to test responsive breakpoints');
+        });
+    </script>
+</body>
+</html>

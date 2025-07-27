@@ -1,0 +1,286 @@
+/**
+ * List Components
+ * List styles and navigation components
+ */
+
+/* Base list */
+.list {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-1);
+}
+
+.list-item {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-bottom: 1px solid var(--divider-color);
+    transition: background-color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    min-height: 48px;
+}
+
+.list-item:last-child {
+    border-bottom: none;
+}
+
+.list-item:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.list-item.active {
+    background-color: rgba(25, 118, 210, 0.08);
+    border-right: 3px solid var(--primary-color);
+}
+
+/* Clickable list items */
+.list-item-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.list-item-clickable:active {
+    background-color: rgba(0, 0, 0, 0.08);
+}
+
+/* List item content */
+.list-item-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.list-item-text {
+    flex: 1;
+}
+
+.list-item-primary {
+    font-size: var(--font-size-base);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.list-item-secondary {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    line-height: var(--line-height-base);
+}
+
+.list-item-meta {
+    font-size: var(--font-size-xs);
+    color: var(--text-disabled);
+    margin-top: var(--spacing-xs);
+}
+
+/* List item actions */
+.list-item-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.list-item-action {
+    padding: var(--spacing-xs);
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+}
+
+.list-item-action:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+}
+
+/* List item avatar/icon */
+.list-item-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-sm);
+    flex-shrink: 0;
+}
+
+.list-item-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+/* List variations */
+.list-dense .list-item {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    min-height: 40px;
+}
+
+.list-flush {
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.list-flush .list-item {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+/* Patient list specific */
+.patient-list-item {
+    padding: var(--spacing-lg);
+    background-color: var(--surface-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    margin-bottom: var(--spacing-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.patient-list-item:hover {
+    box-shadow: var(--shadow-2);
+    transform: translateY(-1px);
+}
+
+.patient-list-item:active {
+    transform: translateY(0);
+}
+
+.patient-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.patient-name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.patient-age {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.patient-facility {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.patient-date {
+    color: var(--text-disabled);
+    font-size: var(--font-size-xs);
+}
+
+.patient-sync-status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Navigation list */
+.nav-list {
+    padding: var(--spacing-sm) 0;
+}
+
+.nav-list .list-item {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 0;
+    border-bottom: none;
+    font-weight: var(--font-weight-medium);
+}
+
+.nav-list .list-item:hover {
+    background-color: rgba(25, 118, 210, 0.08);
+}
+
+.nav-list .list-item.active {
+    background-color: var(--primary-color);
+    color: white;
+    border-right: none;
+}
+
+.nav-list .list-item.active .list-item-icon {
+    color: white;
+}
+
+/* Empty state */
+.list-empty {
+    padding: var(--spacing-xxl);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.list-empty-icon {
+    font-size: 48px;
+    color: var(--text-disabled);
+    margin-bottom: var(--spacing-md);
+}
+
+.list-empty-text {
+    font-size: var(--font-size-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+.list-empty-subtext {
+    font-size: var(--font-size-sm);
+    color: var(--text-disabled);
+}
+
+/* List loading state */
+.list-loading {
+    padding: var(--spacing-lg);
+    text-align: center;
+    color: var(--text-secondary);
+}
+
+.list-loading::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--divider-color);
+    border-top: 2px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: var(--spacing-sm);
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .list-item {
+        padding: var(--spacing-md);
+    }
+    
+    .patient-list-item {
+        padding: var(--spacing-md);
+    }
+    
+    .patient-list-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .list-item-actions {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+}

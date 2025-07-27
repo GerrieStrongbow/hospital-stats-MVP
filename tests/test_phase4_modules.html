@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 4 Modules Test - Validation & UI Components</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .test-form { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 200px; padding: 5px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-primary { background: #007bff; color: white; }
+        .error-message { color: red; font-size: 12px; margin-top: 4px; }
+        .field-error { border: 2px solid red; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Phase 4 Modules Test - Validation & UI Components</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Mock Form for Testing -->
+    <div class="test-section">
+        <h3>Validation Test Form</h3>
+        
+        <div class="test-form">
+            <h4>Test Form Validation</h4>
+            <form id="test-form">
+                <div class="form-group">
+                    <label for="patient_identifier">Patient ID:</label>
+                    <input type="text" id="patient_identifier" name="patient_identifier" placeholder="Enter Patient ID">
+                </div>
+                
+                <div class="form-group">
+                    <label for="date">Appointment Date:</label>
+                    <input type="date" id="date" name="date">
+                </div>
+                
+                <div class="form-group">
+                    <label for="duration_minutes">Duration (minutes):</label>
+                    <input type="number" id="duration_minutes" name="duration_minutes" placeholder="30">
+                </div>
+                
+                <div class="form-group">
+                    <label for="facility_type">Facility Type:</label>
+                    <select id="facility_type" name="facility_type">
+                        <option value="">Select Type</option>
+                        <option value="hospital">Hospital</option>
+                        <option value="clinic">Clinic</option>
+                    </select>
+                </div>
+                
+                <button type="button" id="validate-form" class="btn btn-primary">Test Validation</button>
+                <button type="button" id="show-loading" class="btn btn-primary">Test Loading</button>
+                <button type="button" id="test-components" class="btn btn-primary">Test UI Components</button>
+            </form>
+        </div>
+    </div>
+    
+    <div id="console-output">
+        <h3>Console Output:</h3>
+        <pre id="console-log"></pre>
+    </div>
+    
+    <!-- Load modules -->
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/utils/helpers.js"></script>
+    <script src="js/utils/validation.js"></script>
+    <script src="js/ui/components.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleLog = document.getElementById('console-log');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        let testResults = [];
+        
+        function addTest(name, passed, details = '') {
+            const result = { name, passed, details };
+            testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-section';
+            testDiv.innerHTML = `
+                <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                ${details ? `<div class="info">${details}</div>` : ''}
+            `;
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        function runTests() {
+            console.log('Starting Phase 4 module tests...');
+            
+            // Test 1: Module loading
+            addTest(
+                'Validation Module Loaded',
+                typeof window.Validation !== 'undefined',
+                window.Validation ? 'Validation module available with methods: ' + 
+                    Object.keys(window.Validation).filter(k => typeof window.Validation[k] === 'function').join(', ') : 
+                    'Validation module not found'
+            );
+            
+            addTest(
+                'UIComponents Module Loaded',
+                typeof window.UIComponents !== 'undefined',
+                window.UIComponents ? 'UIComponents module available with methods: ' + 
+                    Object.keys(window.UIComponents).filter(k => typeof window.UIComponents[k] === 'function').join(', ') : 
+                    'UIComponents module not found'
+            );
+            
+            addTest(
+                'Helpers Module Loaded',
+                typeof window.Helpers !== 'undefined',
+                window.Helpers ? 'Helpers module available with methods: ' + 
+                    Object.keys(window.Helpers).filter(k => typeof window.Helpers[k] === 'function').join(', ') : 
+                    'Helpers module not found'
+            );
+            
+            // Test 2: Legacy function compatibility
+            addTest(
+                'Legacy showLoading Function Available',
+                typeof window.showLoading === 'function',
+                'showLoading function exposed for backward compatibility'
+            );
+            
+            addTest(
+                'Legacy showError Function Available',
+                typeof window.showError === 'function',
+                'showError function exposed for backward compatibility'
+            );
+            
+            // Test 3: Validation functionality
+            try {
+                const mockFormData = {
+                    patient_identifier: 'TEST123',
+                    age_group: '18-25',
+                    facility_type: 'clinic',
+                    facility: 'Test Clinic',
+                    date: new Date().toISOString().split('T')[0],
+                    appointment_type: 'New',
+                    referral_source: 'Self',
+                    clinical_area: 'Physiotherapy',
+                    attendance: 'Attended',
+                    disposal: 'Completed',
+                    outcome: 'Improved',
+                    duration_minutes: 30
+                };
+                
+                const errors = Validation.validatePatientForm(mockFormData);
+                
+                addTest(
+                    'Form Validation Working',
+                    Array.isArray(errors) && errors.length === 0,
+                    `Validation returned ${errors.length} errors for valid data`
+                );
+                
+                // Test invalid data
+                const invalidData = { patient_identifier: 'X' }; // Too short
+                const invalidErrors = Validation.validatePatientForm(invalidData);
+                
+                addTest(
+                    'Invalid Data Detection',
+                    Array.isArray(invalidErrors) && invalidErrors.length > 0,
+                    `Validation correctly found ${invalidErrors.length} errors in invalid data`
+                );
+                
+            } catch (error) {
+                console.error('Validation test error:', error);
+                addTest('Form Validation Working', false, `Validation test failed: ${error.message}`);
+            }
+            
+            // Test 4: UI Components functionality
+            try {
+                const facilityOptions = UIComponents.getFacilityOptions();
+                
+                addTest(
+                    'Facility Options Generation',
+                    typeof facilityOptions === 'object' && facilityOptions.hospital && facilityOptions.clinic,
+                    `Generated facility options with ${Object.keys(facilityOptions).length} facility types`
+                );
+                
+                const activitiesOptions = UIComponents.getActivitiesOptions();
+                
+                addTest(
+                    'Activities Options Generation',
+                    typeof activitiesOptions === 'object',
+                    `Generated activities options with ${Object.keys(activitiesOptions).length} categories`
+                );
+                
+            } catch (error) {
+                console.error('UI Components test error:', error);
+                addTest('UI Components Working', false, `UI Components test failed: ${error.message}`);
+            }
+            
+            // Test 5: Helper utilities
+            try {
+                const testDate = new Date();
+                const formattedDate = Helpers.formatDate(testDate);
+                
+                addTest(
+                    'Date Formatting Helper',
+                    typeof formattedDate === 'string' && formattedDate.length > 0,
+                    `Date formatted as: ${formattedDate}`
+                );
+                
+                const testId = Helpers.generateLocalId();
+                
+                addTest(
+                    'ID Generation Helper',
+                    typeof testId === 'string' && testId.startsWith('local_'),
+                    `Generated ID: ${testId}`
+                );
+                
+                const testDuration = Helpers.formatDuration(90);
+                
+                addTest(
+                    'Duration Formatting Helper',
+                    testDuration === '1h 30m',
+                    `90 minutes formatted as: ${testDuration}`
+                );
+                
+            } catch (error) {
+                console.error('Helpers test error:', error);
+                addTest('Helper Functions Working', false, `Helpers test failed: ${error.message}`);
+            }
+            
+            // Setup interactive testing
+            setupInteractiveTests();
+            
+            // Generate summary
+            setTimeout(() => {
+                const passedTests = testResults.filter(t => t.passed).length;
+                const totalTests = testResults.length;
+                const successRate = Math.round((passedTests / totalTests) * 100);
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = 'test-section';
+                summaryDiv.innerHTML = `
+                    <h2>Phase 4 Modules Test Summary</h2>
+                    <div class="info">
+                        <strong>Total Tests:</strong> ${totalTests}<br>
+                        <strong class="pass">Passed:</strong> ${passedTests}<br>
+                        <strong class="fail">Failed:</strong> ${totalTests - passedTests}<br>
+                        <strong>Success Rate:</strong> ${successRate}%<br>
+                        <strong>Phase 4 Status:</strong> ${successRate >= 80 ? '✅ WORKING' : '❌ BROKEN'}
+                    </div>
+                    <div class="info" style="margin-top: 10px;">
+                        <strong>Interactive Tests Available:</strong><br>
+                        • Test form validation with real user input<br>
+                        • Test loading overlay functionality<br>
+                        • Test UI component generation<br>
+                        • Check console for detailed operation logs
+                    </div>
+                `;
+                document.getElementById('test-results').appendChild(summaryDiv);
+                
+                console.log('Phase 4 module tests completed - Success rate:', successRate + '%');
+            }, 1000);
+        }
+        
+        function setupInteractiveTests() {
+            // Validation test button
+            document.getElementById('validate-form').addEventListener('click', () => {
+                const form = document.getElementById('test-form');
+                const formData = new FormData(form);
+                
+                console.log('Testing form validation with current form data...');
+                
+                // Convert FormData to object for validation
+                const data = {};
+                for (const [key, value] of formData.entries()) {
+                    data[key] = value;
+                }
+                
+                const errors = Validation.validatePatientForm(data);
+                
+                if (errors.length === 0) {
+                    console.log('✅ Form validation passed!');
+                    UIComponents.showMessage('Form validation passed!', 'success');
+                } else {
+                    console.log('❌ Form validation failed:', errors);
+                    Validation.showFormErrors(errors);
+                }
+            });
+            
+            // Loading test button
+            document.getElementById('show-loading').addEventListener('click', () => {
+                console.log('Testing loading overlay...');
+                UIComponents.showLoading(true);
+                setTimeout(() => {
+                    UIComponents.showLoading(false);
+                    console.log('Loading overlay test completed');
+                }, 2000);
+            });
+            
+            // UI Components test button
+            document.getElementById('test-components').addEventListener('click', () => {
+                console.log('Testing UI component generation...');
+                
+                const facilityOptions = UIComponents.getFacilityOptions();
+                const activitiesOptions = UIComponents.getActivitiesOptions();
+                const devicesOptions = UIComponents.getAssistiveDevicesOptions();
+                
+                console.log('Facility Options:', Object.keys(facilityOptions));
+                console.log('Activities Options:', Object.keys(activitiesOptions));
+                console.log('Devices Options:', Object.keys(devicesOptions));
+                
+                UIComponents.showMessage(`Generated ${Object.keys(facilityOptions).length} facility types, ${Object.keys(activitiesOptions).length} activity categories, and ${Object.keys(devicesOptions).length} device categories`, 'info');
+            });
+            
+            // Setup real-time validation
+            const patientIdInput = document.getElementById('patient_identifier');
+            const dateInput = document.getElementById('date');
+            const durationInput = document.getElementById('duration_minutes');
+            
+            if (patientIdInput) {
+                patientIdInput.addEventListener('input', Validation.validatePatientIdField);
+            }
+            
+            if (dateInput) {
+                dateInput.addEventListener('change', Validation.validateDateField);
+            }
+            
+            if (durationInput) {
+                durationInput.addEventListener('input', Validation.validateDurationField);
+            }
+        }
+        
+        // Run tests when modules are loaded
+        setTimeout(runTests, 1000);
+    </script>
+</body>
+</html>

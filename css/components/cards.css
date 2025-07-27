@@ -1,0 +1,223 @@
+/**
+ * Card Components
+ * Card layouts and content containers
+ */
+
+/* Base card */
+.card {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+    transition: box-shadow var(--transition-fast);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-2);
+}
+
+.card-header {
+    padding: var(--spacing-lg);
+    border-bottom: 1px solid var(--divider-color);
+    background-color: var(--surface-color);
+}
+
+.card-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.card-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: var(--spacing-xs) 0 0 0;
+}
+
+.card-body {
+    padding: var(--spacing-lg);
+}
+
+.card-footer {
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-top: 1px solid var(--divider-color);
+    background-color: rgba(0, 0, 0, 0.02);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* Card variations */
+.card-flat {
+    box-shadow: none;
+    border: 1px solid var(--divider-color);
+}
+
+.card-raised {
+    box-shadow: var(--shadow-2);
+}
+
+.card-raised:hover {
+    box-shadow: var(--shadow-3);
+}
+
+/* Compact card */
+.card-compact .card-header,
+.card-compact .card-body,
+.card-compact .card-footer {
+    padding: var(--spacing-md);
+}
+
+/* Patient record card */
+.patient-card {
+    margin-bottom: var(--spacing-md);
+    border-left: 4px solid var(--primary-color);
+}
+
+.patient-card .patient-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+}
+
+.patient-card .patient-name {
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.patient-card .patient-age {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.patient-card .patient-status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+}
+
+.patient-status.synced {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--accent-color);
+}
+
+.patient-status.pending {
+    background-color: rgba(255, 152, 0, 0.1);
+    color: var(--warning-color);
+}
+
+.patient-status.error {
+    background-color: rgba(211, 47, 47, 0.1);
+    color: var(--error-color);
+}
+
+.patient-card .patient-details {
+    margin-top: var(--spacing-sm);
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.patient-card .patient-actions {
+    margin-top: var(--spacing-md);
+    display: flex;
+    gap: var(--spacing-sm);
+}
+
+/* Stats card */
+.stats-card {
+    text-align: center;
+    padding: var(--spacing-xl);
+}
+
+.stats-number {
+    font-size: var(--font-size-3xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--primary-color);
+    margin-bottom: var(--spacing-sm);
+}
+
+.stats-label {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Info card */
+.info-card {
+    border-left: 4px solid var(--info-color);
+    background-color: rgba(2, 136, 209, 0.05);
+}
+
+.warning-card {
+    border-left: 4px solid var(--warning-color);
+    background-color: rgba(245, 124, 0, 0.05);
+}
+
+.error-card {
+    border-left: 4px solid var(--error-color);
+    background-color: rgba(211, 47, 47, 0.05);
+}
+
+.success-card {
+    border-left: 4px solid var(--accent-color);
+    background-color: rgba(76, 175, 80, 0.05);
+}
+
+/* Card list */
+.card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-md);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: var(--spacing-lg);
+}
+
+/* Clickable card */
+.card-clickable {
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.card-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-3);
+}
+
+.card-clickable:active {
+    transform: translateY(0);
+}
+
+/* Card media */
+.card-media {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: var(--divider-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .card-header,
+    .card-body,
+    .card-footer {
+        padding: var(--spacing-md);
+    }
+    
+    .card-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .patient-card .patient-actions {
+        flex-direction: column;
+    }
+}

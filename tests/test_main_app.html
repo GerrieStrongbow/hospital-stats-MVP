@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main App Test - Phase 1</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .status { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Main App Test - Phase 1 Integration</h1>
+    
+    <div id="status"></div>
+    
+    <h3>Console Output:</h3>
+    <pre id="console-output"></pre>
+    
+    <!-- Same loading order as main app -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../css/main.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    
+    <!-- New modules -->
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/ui/router.js"></script>
+    
+    <!-- Legacy app.js -->
+    <script src="app.js"></script>
+    
+    <!-- New app initialization -->
+    <script src="js/core/app.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleOutput = document.getElementById('console-output');
+        const statusDiv = document.getElementById('status');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            consoleOutput.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        // Check loading status
+        function checkStatus() {
+            const checks = [
+                { name: 'Config Module', test: () => typeof window.Config !== 'undefined' },
+                { name: 'State Module', test: () => typeof window.State !== 'undefined' },
+                { name: 'Router Module', test: () => typeof window.Router !== 'undefined' },
+                { name: 'App Module', test: () => typeof window.App !== 'undefined' },
+                { name: 'Legacy Bridge', test: () => typeof window.renderView === 'function' },
+                { name: 'State-App Bridge', test: () => {
+                    try {
+                        window.State.set('test', 'bridge');
+                        return app.user !== undefined; // Should be accessible via bridge
+                    } catch (e) {
+                        return false;
+                    }
+                }},
+                { name: 'Supabase Config', test: () => typeof window.supabaseConfig !== 'undefined' }
+            ];
+            
+            let allPassed = true;
+            let statusHtml = '<h3>Module Loading Status:</h3>';
+            
+            checks.forEach(check => {
+                const passed = check.test();
+                allPassed = allPassed && passed;
+                statusHtml += `<div class="${passed ? 'success' : 'error'}">${passed ? '✓' : '✗'} ${check.name}</div>`;
+            });
+            
+            statusHtml += `<div class="${allPassed ? 'success' : 'error'}">
+                <strong>Overall Status: ${allPassed ? 'PHASE 1 SUCCESSFUL' : 'ISSUES DETECTED'}</strong>
+            </div>`;
+            
+            statusDiv.innerHTML = statusHtml;
+            
+            return allPassed;
+        }
+        
+        // Wait for everything to load
+        setTimeout(() => {
+            const success = checkStatus();
+            
+            if (success) {
+                console.log('✓ Phase 1 completed successfully!');
+                console.log('Ready to proceed to Phase 2 (Critical Issues Fix)');
+            } else {
+                console.error('✗ Phase 1 has issues that need to be resolved');
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -22,3 +22,6 @@ node_modules/
 # Build output (if we add build process later)
 dist/
 build/
+
+# YoYo AI version control directory
+.yoyo/

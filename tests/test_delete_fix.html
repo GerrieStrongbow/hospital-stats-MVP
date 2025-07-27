@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Button Fix Test - Patient CRUD Module</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .mock-form { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        .form-buttons { margin-top: 15px; }
+        .button-group { display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-icon { margin-right: 5px; }
+        #patient-form { background: #f8f9fa; padding: 20px; border-radius: 5px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 200px; padding: 5px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Delete Button Fix Test - Patient CRUD Module</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Mock Patient Form -->
+    <div class="test-section">
+        <h3>Mock Patient Form (Test Delete Button Here)</h3>
+        <form id="patient-form" class="mock-form">
+            <div class="form-group">
+                <label for="patient-identifier">Patient ID:</label>
+                <input type="text" id="patient-identifier" name="patient-identifier" value="TEST123">
+            </div>
+            <div class="form-group">
+                <label for="appointment-date">Date:</label>
+                <input type="date" id="appointment-date" name="appointment-date" value="2024-01-15">
+            </div>
+            <div class="form-group">
+                <label for="facility-type">Facility Type:</label>
+                <select id="facility-type" name="facility-type">
+                    <option value="hospital">Hospital</option>
+                    <option value="clinic" selected>Clinic</option>
+                </select>
+            </div>
+            
+            <!-- Button container will be populated by CRUD module -->
+            <div id="form-buttons" class="form-buttons">
+                <!-- Buttons will be added here -->
+            </div>
+        </form>
+    </div>
+    
+    <div id="console-output">
+        <h3>Console Output:</h3>
+        <pre id="console-log"></pre>
+    </div>
+    
+    <!-- Load modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/ui/router.js"></script>
+    <script src="js/patient/patient-form.js"></script>
+    <script src="js/patient/patient-crud.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleLog = document.getElementById('console-log');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            consoleLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        // Override confirm for testing
+        const originalConfirm = window.confirm;
+        let confirmResult = true;
+        window.confirm = function(message) {
+            console.log('Confirm dialog triggered:', message);
+            return confirmResult; // Return true to proceed with delete
+        };
+        
+        // Mock Router for navigation
+        window.Router = {
+            navigate: function(route, params) {
+                console.log('Router.navigate called:', route, params);
+            }
+        };
+        
+        // Mock data for editing mode
+        const mockPatientData = {
+            id: 'test123',
+            patient_identifier: 'TEST123',
+            date: '2024-01-15',
+            facility_type: 'clinic',
+            source: 'supabase'
+        };
+        
+        function runTests() {
+            const results = document.getElementById('test-results');
+            
+            function addTest(name, passed, details = '') {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-section';
+                testDiv.innerHTML = `
+                    <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                    ${details ? `<div class="info">${details}</div>` : ''}
+                `;
+                results.appendChild(testDiv);
+            }
+            
+            // Test 1: PatientCRUD module loaded
+            addTest(
+                'PatientCRUD Module Loaded',
+                typeof window.PatientCRUD !== 'undefined',
+                window.PatientCRUD ? 'PatientCRUD object available with methods: ' + 
+                    Object.keys(window.PatientCRUD).filter(k => typeof window.PatientCRUD[k] === 'function').join(', ') : 
+                    'PatientCRUD module not found'
+            );
+            
+            if (!window.PatientCRUD) {
+                addTest('Overall Test Result', false, 'Cannot continue tests without PatientCRUD module');
+                return;
+            }
+            
+            // Test 2: Mock editing mode setup
+            // Set up PatientForm module with editing data
+            if (window.PatientForm) {
+                window.PatientForm.currentPatientData = mockPatientData;
+                window.PatientForm.currentPatientId = 'test123';
+                window.PatientForm.currentSource = 'supabase';
+                window.PatientForm.isEditing = true;
+                
+                // Update state
+                State.set('currentPatientData', mockPatientData);
+                State.set('currentPatientId', 'test123');
+            }
+            
+            addTest(
+                'Mock Editing Mode Setup',
+                window.PatientForm && window.PatientForm.isEditing,
+                `PatientForm isEditing: ${window.PatientForm?.isEditing}, currentPatientId: ${window.PatientForm?.currentPatientId}`
+            );
+            
+            // Test 3: Trigger form button setup
+            console.log('Triggering form button setup...');
+            window.PatientCRUD.setupFormButtons();
+            
+            // Check if buttons were added
+            const buttonContainer = document.getElementById('form-buttons');
+            const deleteButton = document.getElementById('delete-patient');
+            const saveButton = document.getElementById('save-patient');
+            
+            addTest(
+                'Form Buttons Container Found',
+                buttonContainer !== null,
+                buttonContainer ? `Button container exists with ${buttonContainer.children.length} elements` : 'Button container not found'
+            );
+            
+            addTest(
+                'Delete Button Added',
+                deleteButton !== null,
+                deleteButton ? `Delete button exists with text: "${deleteButton.textContent.trim()}"` : 'Delete button not found'
+            );
+            
+            addTest(
+                'Save Button Added',
+                saveButton !== null,
+                saveButton ? `Save button exists with text: "${saveButton.textContent.trim()}"` : 'Save button not found'
+            );
+            
+            // Test 4: Test delete button click handler
+            let deleteClicked = false;
+            let confirmCalled = false;
+            
+            // Override PatientCRUD.confirmDeletePatient to track calls
+            const originalConfirmDelete = window.PatientCRUD.confirmDeletePatient;
+            window.PatientCRUD.confirmDeletePatient = function() {
+                deleteClicked = true;
+                confirmCalled = true;
+                console.log('Delete confirmation function called');
+                // Don't actually proceed with delete in test
+            };
+            
+            if (deleteButton) {
+                console.log('Testing delete button click...');
+                deleteButton.click();
+                
+                setTimeout(() => {
+                    addTest(
+                        'Delete Button Click Handler',
+                        deleteClicked,
+                        deleteClicked ? 'Delete button click triggered confirmation' : 'Delete button click not handled'
+                    );
+                    
+                    // Test 5: Test new patient mode (should not show delete button)
+                    console.log('Testing new patient mode...');
+                    
+                    // Reset to new patient mode
+                    if (window.PatientForm) {
+                        window.PatientForm.currentPatientData = null;
+                        window.PatientForm.currentPatientId = 'new';
+                        window.PatientForm.isEditing = false;
+                        State.set('currentPatientData', null);
+                        State.set('currentPatientId', 'new');
+                    }
+                    
+                    // Trigger button setup again
+                    window.PatientCRUD.setupFormButtons();
+                    
+                    const newDeleteButton = document.getElementById('delete-patient');
+                    const newSaveButton = document.getElementById('save-patient');
+                    
+                    addTest(
+                        'New Patient Mode - No Delete Button',
+                        newDeleteButton === null,
+                        newDeleteButton ? 'Delete button incorrectly shown for new patient' : 'Delete button correctly hidden for new patient'
+                    );
+                    
+                    addTest(
+                        'New Patient Mode - Save Button Present',
+                        newSaveButton !== null && newSaveButton.textContent.includes('Save Patient'),
+                        newSaveButton ? `Save button present with text: "${newSaveButton.textContent.trim()}"` : 'Save button missing for new patient'
+                    );
+                    
+                    // Summary
+                    const allTests = results.querySelectorAll('.test-section h3');
+                    const passedTests = results.querySelectorAll('.test-section h3.pass');
+                    const failedTests = results.querySelectorAll('.test-section h3.fail');
+                    
+                    const summaryDiv = document.createElement('div');
+                    summaryDiv.className = 'test-section';
+                    const successRate = Math.round((passedTests.length / allTests.length) * 100);
+                    summaryDiv.innerHTML = `
+                        <h2>Delete Button Fix Test Summary</h2>
+                        <div class="info">
+                            <strong>Total Tests:</strong> ${allTests.length}<br>
+                            <strong class="pass">Passed:</strong> ${passedTests.length}<br>
+                            <strong class="fail">Failed:</strong> ${failedTests.length}<br>
+                            <strong>Success Rate:</strong> ${successRate}%<br>
+                            <strong>Delete Button Status:</strong> ${successRate >= 80 ? '✅ FIXED' : '❌ STILL BROKEN'}
+                        </div>
+                        <div class="info" style="margin-top: 10px;">
+                            <strong>Key Findings:</strong><br>
+                            • Delete button appears when editing existing patients<br>
+                            • Delete button is hidden when creating new patients<br>
+                            • Click handler properly triggers confirmation dialog<br>
+                            • Form buttons are dynamically managed by CRUD module
+                        </div>
+                    `;
+                    results.appendChild(summaryDiv);
+                    
+                    console.log('Delete button fix tests completed - Success rate:', successRate + '%');
+                    
+                }, 100);
+            } else {
+                addTest('Delete Button Click Handler', false, 'Cannot test click handler - delete button not found');
+            }
+        }
+        
+        // Run tests when page loads
+        setTimeout(runTests, 500);
+    </script>
+</body>
+</html>

@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive User Registration Test</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1565c0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .step { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Comprehensive User Registration Test</h1>
+        <p>This test validates complete user registration flow including database synchronization with user_profiles table.</p>
+
+        <div class="test-section">
+            <h2>📋 Test Configuration</h2>
+            <div id="config-info">
+                <p><strong>Test User:</strong> <code>test-user-${Date.now()}@westerncape.gov.za</code></p>
+                <p><strong>Target Tables:</strong> auth.users + user_profiles</p>
+                <p><strong>Frontend Constants:</strong> Verified mapping to database constraints</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Pre-Test Verification</h2>
+            <button onclick="runPreTestChecks()">Run Pre-Test Checks</button>
+            <div id="pre-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>👤 User Registration Test</h2>
+            <button onclick="runRegistrationTest()">Test User Registration</button>
+            <div id="registration-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗄️ Database Verification</h2>
+            <button onclick="verifyDatabaseSync()">Verify Database Sync</button>
+            <div id="database-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Cleanup</h2>
+            <button onclick="cleanupTestData()">Clean Up Test Data</button>
+            <div id="cleanup-results"></div>
+        </div>
+    </div>
+
+    <!-- Load Required Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../js/core/state.js"></script>
+    <script src="../js/utils/constants.js"></script>
+    <script src="../js/auth/auth.js"></script>
+
+    <script>
+        // Test state
+        let testUser = null;
+        let testEmail = `test-user-${Date.now()}@westerncape.gov.za`;
+        let testPassword = 'TestPassword123!';
+        let supabaseClient = null;
+
+        // Initialize Supabase
+        async function initializeSupabase() {
+            if (!window.APP_CONFIG) {
+                throw new Error('APP_CONFIG not found');
+            }
+            
+            const { createClient } = supabase;
+            supabaseClient = createClient(
+                window.APP_CONFIG.SUPABASE_URL,
+                window.APP_CONFIG.SUPABASE_ANON_KEY
+            );
+            
+            console.log('Supabase client initialized for testing');
+            return supabaseClient;
+        }
+
+        // Utility functions
+        function showResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            container.appendChild(resultDiv);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // Pre-test checks
+        async function runPreTestChecks() {
+            clearResults('pre-test-results');
+            showResult('pre-test-results', '🔄 Running pre-test checks...', 'info');
+
+            try {
+                // Initialize Supabase
+                await initializeSupabase();
+                showResult('pre-test-results', '✅ Supabase client initialized successfully', 'success');
+
+                // Check Constants
+                if (window.Constants && window.Constants.EMPLOYMENT_STATUSES) {
+                    showResult('pre-test-results', '✅ Constants loaded successfully', 'success');
+                    showResult('pre-test-results', `📊 Employment statuses: ${window.Constants.EMPLOYMENT_STATUSES.map(s => s.value).join(', ')}`, 'info');
+                } else {
+                    showResult('pre-test-results', '❌ Constants not loaded properly', 'error');
+                }
+
+                // Check AuthService
+                if (window.AuthService) {
+                    showResult('pre-test-results', '✅ AuthService available', 'success');
+                } else {
+                    showResult('pre-test-results', '⚠️ AuthService not available - using direct Supabase calls', 'warning');
+                }
+
+                // Test database connection
+                const { data, error } = await supabaseClient.from('user_profiles').select('count').limit(1);
+                if (error) {
+                    showResult('pre-test-results', `❌ Database connection test failed: ${error.message}`, 'error');
+                } else {
+                    showResult('pre-test-results', '✅ Database connection successful', 'success');
+                }
+
+                showResult('pre-test-results', '🎯 Pre-test checks completed', 'success');
+
+            } catch (error) {
+                showResult('pre-test-results', `❌ Pre-test check failed: ${error.message}`, 'error');
+                console.error('Pre-test error:', error);
+            }
+        }
+
+        // Test user registration
+        async function runRegistrationTest() {
+            clearResults('registration-results');
+            showResult('registration-results', '🔄 Starting user registration test...', 'info');
+
+            try {
+                const userData = {
+                    email: testEmail,
+                    password: testPassword,
+                    firstName: 'Test',
+                    lastName: 'User',
+                    therapistType: 'Occupational Therapist',
+                    employmentStatus: 'full-time',
+                    subDistrict: 'Stellenbosch'
+                };
+
+                showResult('registration-results', `📝 Test user data: ${JSON.stringify(userData, null, 2)}`, 'info');
+
+                // Step 1: Create auth user
+                showResult('registration-results', '1️⃣ Creating auth user...', 'info');
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: userData.email,
+                    password: userData.password
+                });
+
+                if (authError) {
+                    throw new Error(`Auth signup failed: ${authError.message}`);
+                }
+
+                if (!authData.user) {
+                    throw new Error('No user returned from auth signup');
+                }
+
+                testUser = authData.user;
+                showResult('registration-results', `✅ Auth user created successfully (ID: ${testUser.id})`, 'success');
+
+                // Step 2: Create user profile
+                showResult('registration-results', '2️⃣ Creating user profile...', 'info');
+                const profileData = {
+                    id: testUser.id,
+                    first_name: userData.firstName,
+                    last_name: userData.lastName,
+                    email: userData.email,
+                    therapist_type: userData.therapistType,
+                    employment_status: userData.employmentStatus,
+                    sub_district: userData.subDistrict
+                };
+
+                const { data: profileResult, error: profileError } = await supabaseClient
+                    .from('user_profiles')
+                    .insert(profileData)
+                    .select();
+
+                if (profileError) {
+                    throw new Error(`Profile creation failed: ${profileError.message}`);
+                }
+
+                showResult('registration-results', '✅ User profile created successfully', 'success');
+                showResult('registration-results', `📊 Profile data: ${JSON.stringify(profileResult[0], null, 2)}`, 'info');
+
+                showResult('registration-results', '🎉 Registration test completed successfully!', 'success');
+
+            } catch (error) {
+                showResult('registration-results', `❌ Registration test failed: ${error.message}`, 'error');
+                console.error('Registration test error:', error);
+            }
+        }
+
+        // Verify database synchronization
+        async function verifyDatabaseSync() {
+            clearResults('database-results');
+            showResult('database-results', '🔄 Verifying database synchronization...', 'info');
+
+            try {
+                if (!testUser) {
+                    throw new Error('No test user available. Run registration test first.');
+                }
+
+                // Check auth.users table
+                showResult('database-results', '1️⃣ Checking auth.users table...', 'info');
+                const { data: { user }, error: sessionError } = await supabaseClient.auth.getUser();
+                
+                if (sessionError) {
+                    throw new Error(`Session check failed: ${sessionError.message}`);
+                }
+
+                if (user && user.id === testUser.id) {
+                    showResult('database-results', '✅ User found in auth.users table', 'success');
+                } else {
+                    showResult('database-results', '⚠️ User session may have expired', 'warning');
+                }
+
+                // Check user_profiles table
+                showResult('database-results', '2️⃣ Checking user_profiles table...', 'info');
+                const { data: profiles, error: profileError } = await supabaseClient
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', testUser.id);
+
+                if (profileError) {
+                    throw new Error(`Profile query failed: ${profileError.message}`);
+                }
+
+                if (profiles && profiles.length > 0) {
+                    const profile = profiles[0];
+                    showResult('database-results', '✅ User profile found in database', 'success');
+                    
+                    // Verify field mappings
+                    const mappingChecks = [
+                        { field: 'employment_status', value: profile.employment_status, expected: 'full-time' },
+                        { field: 'therapist_type', value: profile.therapist_type, expected: 'Occupational Therapist' },
+                        { field: 'sub_district', value: profile.sub_district, expected: 'Stellenbosch' }
+                    ];
+
+                    mappingChecks.forEach(check => {
+                        if (check.value === check.expected) {
+                            showResult('database-results', `✅ ${check.field}: ${check.value}`, 'success');
+                        } else {
+                            showResult('database-results', `❌ ${check.field}: Expected '${check.expected}', got '${check.value}'`, 'error');
+                        }
+                    });
+
+                    showResult('database-results', `📊 Complete profile: ${JSON.stringify(profile, null, 2)}`, 'info');
+                } else {
+                    showResult('database-results', '❌ User profile not found in database', 'error');
+                }
+
+                // Check RLS policies
+                showResult('database-results', '3️⃣ Testing RLS policies...', 'info');
+                const { data: ownProfile, error: rlsError } = await supabaseClient
+                    .from('user_profiles')
+                    .select('*')
+                    .eq('id', testUser.id);
+
+                if (rlsError) {
+                    showResult('database-results', `❌ RLS test failed: ${rlsError.message}`, 'error');
+                } else if (ownProfile && ownProfile.length > 0) {
+                    showResult('database-results', '✅ RLS policies working - user can access own profile', 'success');
+                } else {
+                    showResult('database-results', '⚠️ RLS may be blocking access', 'warning');
+                }
+
+                showResult('database-results', '🎯 Database verification completed', 'success');
+
+            } catch (error) {
+                showResult('database-results', `❌ Database verification failed: ${error.message}`, 'error');
+                console.error('Database verification error:', error);
+            }
+        }
+
+        // Clean up test data
+        async function cleanupTestData() {
+            clearResults('cleanup-results');
+            showResult('cleanup-results', '🔄 Starting cleanup...', 'info');
+
+            try {
+                if (!testUser) {
+                    showResult('cleanup-results', '⚠️ No test user to clean up', 'warning');
+                    return;
+                }
+
+                // Delete user profile (this should cascade delete the auth user due to foreign key)
+                showResult('cleanup-results', '1️⃣ Deleting user profile...', 'info');
+                const { error: profileDeleteError } = await supabaseClient
+                    .from('user_profiles')
+                    .delete()
+                    .eq('id', testUser.id);
+
+                if (profileDeleteError) {
+                    showResult('cleanup-results', `⚠️ Profile deletion failed: ${profileDeleteError.message}`, 'warning');
+                } else {
+                    showResult('cleanup-results', '✅ User profile deleted', 'success');
+                }
+
+                // Sign out to clean up session
+                showResult('cleanup-results', '2️⃣ Signing out...', 'info');
+                const { error: signOutError } = await supabaseClient.auth.signOut();
+                
+                if (signOutError) {
+                    showResult('cleanup-results', `⚠️ Sign out failed: ${signOutError.message}`, 'warning');
+                } else {
+                    showResult('cleanup-results', '✅ Signed out successfully', 'success');
+                }
+
+                testUser = null;
+                showResult('cleanup-results', '🧹 Cleanup completed', 'success');
+
+            } catch (error) {
+                showResult('cleanup-results', `❌ Cleanup failed: ${error.message}`, 'error');
+                console.error('Cleanup error:', error);
+            }
+        }
+
+        // Auto-initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initializeSupabase();
+                showResult('config-info', '✅ Test environment initialized', 'success');
+            } catch (error) {
+                showResult('config-info', `❌ Failed to initialize test environment: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

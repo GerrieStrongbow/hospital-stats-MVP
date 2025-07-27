@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 1 Test - Module Structure</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Phase 1 Test: Module Loading & Infrastructure</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Load modules in same order as main app -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/ui/router.js"></script>
+    
+    <script>
+        function runTests() {
+            const results = document.getElementById('test-results');
+            
+            function addTest(name, passed, details = '') {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-section';
+                testDiv.innerHTML = `
+                    <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                    ${details ? `<div class="info">${details}</div>` : ''}
+                `;
+                results.appendChild(testDiv);
+            }
+            
+            // Test 1: Module Loading
+            addTest(
+                'Config Module Loaded',
+                typeof window.Config !== 'undefined',
+                window.Config ? `Available constants: ${Object.keys(window.Config).join(', ')}` : 'Config module not found'
+            );
+            
+            addTest(
+                'State Module Loaded',
+                typeof window.State !== 'undefined',
+                window.State ? `Available methods: ${Object.keys(window.State).filter(k => typeof window.State[k] === 'function').join(', ')}` : 'State module not found'
+            );
+            
+            addTest(
+                'Router Module Loaded',
+                typeof window.Router !== 'undefined',
+                window.Router ? `Available methods: ${Object.keys(window.Router).filter(k => typeof window.Router[k] === 'function').join(', ')}` : 'Router module not found'
+            );
+            
+            // Test 2: State Management
+            if (window.State) {
+                try {
+                    // Test state operations
+                    window.State.set('test', 'value');
+                    const retrieved = window.State.get('test');
+                    addTest(
+                        'State Get/Set Works',
+                        retrieved === 'value',
+                        `Set 'test' to 'value', retrieved: '${retrieved}'`
+                    );
+                    
+                    // Test state subscription
+                    let subscriptionWorked = false;
+                    const unsubscribe = window.State.subscribe('testSub', (newValue) => {
+                        subscriptionWorked = newValue === 'subscribed';
+                    });
+                    window.State.set('testSub', 'subscribed');
+                    unsubscribe();
+                    
+                    addTest(
+                        'State Subscription Works',
+                        subscriptionWorked,
+                        subscriptionWorked ? 'Subscription callback received correct value' : 'Subscription callback not triggered'
+                    );
+                    
+                } catch (error) {
+                    addTest('State Operations', false, `Error: ${error.message}`);
+                }
+            }
+            
+            // Test 3: Router Parsing
+            if (window.Router) {
+                try {
+                    const { route, params } = window.Router.parseRoute('#patient/123?source=local');
+                    const routeCorrect = route === 'patient';
+                    const paramsCorrect = params.id === '123' && params.source === 'local';
+                    
+                    addTest(
+                        'Router Parsing Works',
+                        routeCorrect && paramsCorrect,
+                        `Parsed route: '${route}', params: ${JSON.stringify(params)}`
+                    );
+                    
+                } catch (error) {
+                    addTest('Router Parsing', false, `Error: ${error.message}`);
+                }
+            }
+            
+            // Test 4: Config Constants
+            if (window.Config) {
+                try {
+                    const hasValidation = window.Config.VALIDATION && window.Config.VALIDATION.PATIENT_ID;
+                    const hasStorageKeys = window.Config.STORAGE_KEYS && window.Config.STORAGE_KEYS.PATIENT_RECORDS;
+                    
+                    addTest(
+                        'Config Constants Available',
+                        hasValidation && hasStorageKeys,
+                        `Validation config: ${hasValidation ? 'Yes' : 'No'}, Storage keys: ${hasStorageKeys ? 'Yes' : 'No'}`
+                    );
+                    
+                } catch (error) {
+                    addTest('Config Constants', false, `Error: ${error.message}`);
+                }
+            }
+            
+            // Test 5: Supabase Integration
+            addTest(
+                'Supabase Library Available',
+                typeof window.supabase !== 'undefined',
+                window.supabase ? 'Supabase global object found' : 'Supabase library not loaded'
+            );
+            
+            // Test 6: Module Isolation
+            let isolationWorks = true;
+            let isolationDetails = [];
+            
+            // Test that modules don't pollute global scope excessively
+            const expectedGlobals = ['Config', 'State', 'Router', 'supabase'];
+            const unexpectedGlobals = ['app', 'renderLanding', 'renderLogin']; // These should come from app.js
+            
+            expectedGlobals.forEach(global => {
+                if (typeof window[global] === 'undefined') {
+                    isolationWorks = false;
+                    isolationDetails.push(`Missing expected global: ${global}`);
+                }
+            });
+            
+            addTest(
+                'Module Isolation',
+                isolationWorks,
+                isolationDetails.length > 0 ? isolationDetails.join(', ') : 'All modules properly exported to global scope'
+            );
+            
+            // Summary
+            const allTests = results.querySelectorAll('.test-section h3');
+            const passedTests = results.querySelectorAll('.test-section h3.pass');
+            const failedTests = results.querySelectorAll('.test-section h3.fail');
+            
+            const summaryDiv = document.createElement('div');
+            summaryDiv.className = 'test-section';
+            summaryDiv.innerHTML = `
+                <h2>Test Summary</h2>
+                <div class="info">
+                    <strong>Total Tests:</strong> ${allTests.length}<br>
+                    <strong class="pass">Passed:</strong> ${passedTests.length}<br>
+                    <strong class="fail">Failed:</strong> ${failedTests.length}<br>
+                    <strong>Success Rate:</strong> ${Math.round((passedTests.length / allTests.length) * 100)}%
+                </div>
+            `;
+            results.appendChild(summaryDiv);
+            
+            console.log('Phase 1 tests completed');
+        }
+        
+        // Run tests when page loads
+        window.addEventListener('DOMContentLoaded', runTests);
+    </script>
+</body>
+</html>

@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync Functionality Test - Storage & Sync Modules</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .warning { color: orange; }
+        .mock-sync { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .sync-status { background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        .record-item { background: #f8f9fa; padding: 8px; margin: 5px 0; border-radius: 3px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; max-height: 200px; }
+        table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Sync Functionality Test - Storage & Sync Modules</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Mock Sync Interface -->
+    <div class="test-section">
+        <h3>Mock Sync Interface</h3>
+        
+        <div id="sync-status" class="sync-status">
+            <strong>Storage Status:</strong> <span id="storage-stats">Loading...</span><br>
+            <strong>Sync Status:</strong> <span id="sync-info">Loading...</span>
+        </div>
+        
+        <div class="mock-sync">
+            <h4>Storage Operations</h4>
+            <button id="create-record-btn" class="btn btn-primary">Create Test Record</button>
+            <button id="update-record-btn" class="btn btn-secondary">Update Last Record</button>
+            <button id="delete-record-btn" class="btn btn-danger">Delete Last Record</button>
+            <button id="clear-storage-btn" class="btn btn-danger">Clear All Storage</button>
+        </div>
+        
+        <div class="mock-sync">
+            <h4>Sync Operations</h4>
+            <button id="manual-sync-btn" class="btn btn-primary">Manual Sync</button>
+            <button id="force-sync-btn" class="btn btn-secondary">Force Sync All</button>
+            <button id="toggle-auto-sync-btn" class="btn btn-secondary">Toggle Auto Sync</button>
+        </div>
+        
+        <div class="mock-sync">
+            <h4>Local Records</h4>
+            <div id="local-records">No records</div>
+        </div>
+        
+        <div class="mock-sync">
+            <h4>Sync Queue</h4>
+            <div id="sync-queue">Empty</div>
+        </div>
+    </div>
+    
+    <div id="console-output">
+        <h3>Console Output:</h3>
+        <pre id="console-log"></pre>
+    </div>
+    
+    <!-- Load modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/sync/storage.js"></script>
+    <script src="js/sync/sync.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleLog = document.getElementById('console-log');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+            ).join(' ');
+            consoleLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        // Mock Supabase for testing
+        const mockSupabase = {
+            from: (table) => ({
+                insert: (data) => ({
+                    select: () => ({
+                        single: async () => {
+                            console.log('Mock Supabase insert to', table, data);
+                            // Simulate successful insert
+                            return {
+                                data: {
+                                    id: 'supabase_' + Date.now(),
+                                    ...data[0],
+                                    created_at: new Date().toISOString()
+                                },
+                                error: null
+                            };
+                        }
+                    })
+                }),
+                
+                update: (data) => ({
+                    eq: () => ({
+                        select: () => ({
+                            single: async () => {
+                                console.log('Mock Supabase update to', table, data);
+                                return {
+                                    data: {
+                                        id: 'updated_record',
+                                        ...data,
+                                        updated_at: new Date().toISOString()
+                                    },
+                                    error: null
+                                };
+                            }
+                        })
+                    })
+                }),
+                
+                delete: () => ({
+                    eq: () => ({
+                        eq: async () => {
+                            console.log('Mock Supabase delete from', table);
+                            return { error: null };
+                        }
+                    })
+                })
+            })
+        };
+        
+        // Mock user for sync operations
+        const mockUser = {
+            id: 'test-user-123',
+            email: 'test@westerncape.gov.za'
+        };
+        
+        // Set mock data in state
+        State.set('supabase', mockSupabase);
+        State.set('user', mockUser);
+        State.set('isAuthenticated', true);
+        
+        let testResults = [];
+        let recordCounter = 0;
+        
+        function addTest(name, passed, details = '') {
+            const result = { name, passed, details };
+            testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-section';
+            testDiv.innerHTML = `
+                <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                ${details ? `<div class="info">${details}</div>` : ''}
+            `;
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        function updateSyncStatus() {
+            const storageStats = Storage.getStorageStats();
+            const syncStatus = Sync.getSyncStatus();
+            
+            document.getElementById('storage-stats').innerHTML = `
+                Total: ${storageStats.totalRecords}, 
+                Synced: ${storageStats.syncedRecords}, 
+                Pending: ${storageStats.pendingSync}
+            `;
+            
+            document.getElementById('sync-info').innerHTML = `
+                Online: ${syncStatus.isOnline ? 'Yes' : 'No'}, 
+                Syncing: ${syncStatus.isSyncing ? 'Yes' : 'No'}, 
+                Auto: ${syncStatus.autoSyncEnabled ? 'On' : 'Off'}
+            `;
+            
+            updateLocalRecords();
+            updateSyncQueue();
+        }
+        
+        function updateLocalRecords() {
+            const records = Storage.getPatientRecords();
+            const container = document.getElementById('local-records');
+            
+            if (records.length === 0) {
+                container.innerHTML = 'No records';
+                return;
+            }
+            
+            const html = records.map(record => `
+                <div class="record-item">
+                    <strong>${record.patient_identifier || record.local_id}</strong> - 
+                    ${record.synced ? 'Synced' : 'Pending'} 
+                    (${record.created_at ? new Date(record.created_at).toLocaleTimeString() : 'No date'})
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        function updateSyncQueue() {
+            const queue = Storage.getSyncQueue();
+            const container = document.getElementById('sync-queue');
+            
+            if (queue.length === 0) {
+                container.innerHTML = 'Empty';
+                return;
+            }
+            
+            container.innerHTML = queue.map(id => `
+                <div class="record-item">${id}</div>
+            `).join('');
+        }
+        
+        function createTestRecord() {
+            recordCounter++;
+            const record = {
+                patient_identifier: `TEST${recordCounter.toString().padStart(3, '0')}`,
+                age_group: '18-25',
+                facility_type: 'clinic',
+                facility: 'Test Clinic',
+                date: new Date().toISOString().split('T')[0],
+                appointment_type: 'New',
+                referral_source: 'Self',
+                clinical_area: 'Physiotherapy',
+                attendance: 'Attended',
+                disposal: 'Completed',
+                outcome: 'Improved',
+                duration_minutes: 30,
+                activities: ['assessment'],
+                assistive_devices: {}
+            };
+            
+            console.log('Creating test record:', record.patient_identifier);
+            return Storage.savePatientRecord(record);
+        }
+        
+        function runTests() {
+            console.log('Starting sync functionality tests...');
+            
+            // Test 1: Module loading
+            addTest(
+                'Storage Module Loaded',
+                typeof window.Storage !== 'undefined',
+                window.Storage ? 'Storage module available with ' + 
+                    Object.keys(window.Storage).filter(k => typeof window.Storage[k] === 'function').length + ' methods' : 
+                    'Storage module not found'
+            );
+            
+            addTest(
+                'Sync Module Loaded',
+                typeof window.Sync !== 'undefined',
+                window.Sync ? 'Sync module available with ' + 
+                    Object.keys(window.Sync).filter(k => typeof window.Sync[k] === 'function').length + ' methods' : 
+                    'Sync module not found'
+            );
+            
+            // Test 2: Storage operations
+            console.log('Testing storage operations...');
+            
+            try {
+                // Clear storage first
+                Storage.clearAllPatientData();
+                
+                // Test create
+                const newRecord = createTestRecord();
+                addTest(
+                    'Storage Create Record',
+                    !!newRecord && !!newRecord.local_id,
+                    `Created record with ID: ${newRecord?.local_id}`
+                );
+                
+                // Test retrieve
+                const retrieved = Storage.getPatientRecord(newRecord.local_id);
+                addTest(
+                    'Storage Retrieve Record',
+                    !!retrieved && retrieved.patient_identifier === newRecord.patient_identifier,
+                    `Retrieved record: ${retrieved?.patient_identifier}`
+                );
+                
+                // Test update
+                const updatedRecord = Storage.updatePatientRecord(newRecord.local_id, {
+                    patient_identifier: 'UPDATED001',
+                    outcome: 'Much Improved'
+                });
+                
+                addTest(
+                    'Storage Update Record',
+                    updatedRecord.patient_identifier === 'UPDATED001',
+                    `Updated record identifier to: ${updatedRecord.patient_identifier}`
+                );
+                
+                // Test sync queue
+                const syncQueue = Storage.getSyncQueue();
+                addTest(
+                    'Sync Queue Management',
+                    syncQueue.includes(newRecord.local_id),
+                    `Record added to sync queue. Queue length: ${syncQueue.length}`
+                );
+                
+            } catch (error) {
+                console.error('Storage test error:', error);
+                addTest('Storage Operations', false, `Storage test failed: ${error.message}`);
+            }
+            
+            // Test 3: Sync status
+            const syncStatus = Sync.getSyncStatus();
+            addTest(
+                'Sync Status Check',
+                typeof syncStatus === 'object' && syncStatus.hasOwnProperty('isOnline'),
+                `Sync status object contains: ${Object.keys(syncStatus).join(', ')}`
+            );
+            
+            // Test 4: Network state
+            addTest(
+                'Network State Detection',
+                typeof syncStatus.isOnline === 'boolean',
+                `Network state: ${syncStatus.isOnline ? 'Online' : 'Offline'}`
+            );
+            
+            // Update UI
+            updateSyncStatus();
+            
+            // Setup event listeners for manual testing
+            setupEventListeners();
+            
+            // Generate summary
+            setTimeout(() => {
+                const passedTests = testResults.filter(t => t.passed).length;
+                const totalTests = testResults.length;
+                const successRate = Math.round((passedTests / totalTests) * 100);
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = 'test-section';
+                summaryDiv.innerHTML = `
+                    <h2>Sync Functionality Test Summary</h2>
+                    <div class="info">
+                        <strong>Total Tests:</strong> ${totalTests}<br>
+                        <strong class="pass">Passed:</strong> ${passedTests}<br>
+                        <strong class="fail">Failed:</strong> ${totalTests - passedTests}<br>
+                        <strong>Success Rate:</strong> ${successRate}%<br>
+                        <strong>Sync Module Status:</strong> ${successRate >= 75 ? '✅ WORKING' : '❌ BROKEN'}
+                    </div>
+                    <div class="info" style="margin-top: 10px;">
+                        <strong>Manual Tests Available:</strong><br>
+                        • Create/Update/Delete records to test storage<br>
+                        • Manual sync to test sync functionality<br>
+                        • Toggle auto-sync to test automatic operations<br>
+                        • Check console for detailed sync operations
+                    </div>
+                `;
+                document.getElementById('test-results').appendChild(summaryDiv);
+                
+                console.log('Sync functionality tests completed - Success rate:', successRate + '%');
+            }, 1000);
+        }
+        
+        function setupEventListeners() {
+            document.getElementById('create-record-btn').addEventListener('click', () => {
+                const record = createTestRecord();
+                console.log('Manual record creation:', record.patient_identifier);
+                updateSyncStatus();
+            });
+            
+            document.getElementById('update-record-btn').addEventListener('click', () => {
+                const records = Storage.getPatientRecords();
+                if (records.length > 0) {
+                    const lastRecord = records[records.length - 1];
+                    const updated = Storage.updatePatientRecord(lastRecord.local_id, {
+                        outcome: 'Updated at ' + new Date().toLocaleTimeString()
+                    });
+                    console.log('Manual record update:', updated.patient_identifier);
+                    updateSyncStatus();
+                } else {
+                    console.log('No records to update');
+                }
+            });
+            
+            document.getElementById('delete-record-btn').addEventListener('click', () => {
+                const records = Storage.getPatientRecords();
+                if (records.length > 0) {
+                    const lastRecord = records[records.length - 1];
+                    const deleted = Storage.deletePatientRecord(lastRecord.local_id);
+                    console.log('Manual record deletion:', deleted);
+                    updateSyncStatus();
+                } else {
+                    console.log('No records to delete');
+                }
+            });
+            
+            document.getElementById('clear-storage-btn').addEventListener('click', () => {
+                Storage.clearAllPatientData();
+                console.log('All storage cleared');
+                updateSyncStatus();
+            });
+            
+            document.getElementById('manual-sync-btn').addEventListener('click', async () => {
+                console.log('Manual sync triggered');
+                try {
+                    const result = await Sync.manualSync();
+                    console.log('Manual sync result:', result);
+                    updateSyncStatus();
+                } catch (error) {
+                    console.error('Manual sync failed:', error);
+                }
+            });
+            
+            document.getElementById('force-sync-btn').addEventListener('click', async () => {
+                console.log('Force sync triggered');
+                try {
+                    const result = await Sync.forceSyncAll();
+                    console.log('Force sync result:', result);
+                    updateSyncStatus();
+                } catch (error) {
+                    console.error('Force sync failed:', error);
+                }
+            });
+            
+            document.getElementById('toggle-auto-sync-btn').addEventListener('click', () => {
+                const currentStatus = Sync.getSyncStatus().autoSyncEnabled;
+                Sync.setAutoSync(!currentStatus);
+                console.log('Auto-sync toggled to:', !currentStatus);
+                updateSyncStatus();
+            });
+        }
+        
+        // Run tests when modules are loaded
+        setTimeout(runTests, 1000);
+        
+        // Update status periodically
+        setInterval(updateSyncStatus, 2000);
+    </script>
+</body>
+</html>

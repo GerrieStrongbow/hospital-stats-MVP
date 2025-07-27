@@ -1,0 +1,342 @@
+/**
+ * Form Page Styles
+ * Specific styles for form pages (add patient, edit patient)
+ */
+
+/* Form page container */
+.form-page {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: var(--spacing-lg);
+}
+
+.form-page-header {
+    margin-bottom: var(--spacing-xl);
+    text-align: center;
+}
+
+.form-page-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-sm);
+}
+
+.form-page-subtitle {
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+}
+
+/* Form container */
+.form-container {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-xl);
+    box-shadow: var(--shadow-1);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Form sections */
+.form-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--divider-color);
+}
+
+.form-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+}
+
+.form-section-title {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.form-section-icon {
+    width: 24px;
+    height: 24px;
+    color: var(--primary-color);
+}
+
+.form-section-description {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Patient form specific styling */
+.patient-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.patient-form .form-row.single {
+    grid-template-columns: 1fr;
+}
+
+.patient-form .form-row.triple {
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* Activity checkboxes grid */
+.activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-md);
+}
+
+.activity-checkbox {
+    background-color: var(--background-color);
+    border: 1px solid var(--divider-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.activity-checkbox:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(25, 118, 210, 0.04);
+}
+
+.activity-checkbox.selected {
+    border-color: var(--primary-color);
+    background-color: rgba(25, 118, 210, 0.08);
+}
+
+.activity-checkbox input[type="checkbox"] {
+    margin-right: var(--spacing-sm);
+    accent-color: var(--primary-color);
+}
+
+.activity-checkbox label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    margin: 0;
+    display: flex;
+    align-items: center;
+}
+
+/* Conditional fields */
+.conditional-field {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background-color: var(--background-color);
+    border-radius: var(--radius-md);
+    border-left: 3px solid var(--primary-color);
+    transition: all var(--transition-base);
+}
+
+.conditional-field.hidden {
+    display: none;
+}
+
+.conditional-field-label {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    font-style: italic;
+}
+
+/* Form navigation */
+.form-navigation {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    box-shadow: var(--shadow-1);
+    position: sticky;
+    bottom: var(--spacing-lg);
+    margin-top: var(--spacing-lg);
+}
+
+.form-nav-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.form-nav-info {
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+.form-nav-actions {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+/* Form progress indicator */
+.form-progress {
+    background-color: var(--surface-color);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    box-shadow: var(--shadow-1);
+}
+
+.progress-bar {
+    width: 100%;
+    height: 6px;
+    background-color: var(--divider-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--primary-color);
+    transition: width var(--transition-base);
+    border-radius: var(--radius-sm);
+}
+
+.progress-text {
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: var(--font-size-sm);
+}
+
+/* Form validation summary */
+.form-validation-summary {
+    background-color: var(--surface-color);
+    border: 1px solid var(--error-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+}
+
+.validation-summary-title {
+    color: var(--error-color);
+    font-weight: var(--font-weight-medium);
+    margin-bottom: var(--spacing-md);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+.validation-summary-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.validation-summary-item {
+    color: var(--error-color);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+    padding-left: var(--spacing-md);
+    position: relative;
+}
+
+.validation-summary-item::before {
+    content: '•';
+    position: absolute;
+    left: 0;
+}
+
+/* Auto-save indicator */
+.autosave-indicator {
+    position: fixed;
+    top: var(--spacing-lg);
+    right: var(--spacing-lg);
+    background-color: var(--surface-color);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    box-shadow: var(--shadow-2);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    z-index: var(--z-toast);
+    transition: all var(--transition-fast);
+    opacity: 0;
+    transform: translateY(-100%);
+}
+
+.autosave-indicator.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.autosave-indicator.saving {
+    color: var(--warning-color);
+}
+
+.autosave-indicator.saved {
+    color: var(--accent-color);
+}
+
+.autosave-indicator.error {
+    color: var(--error-color);
+}
+
+/* Responsive form layout */
+@media (max-width: 768px) {
+    .form-page {
+        padding: var(--spacing-md);
+    }
+    
+    .form-container {
+        padding: var(--spacing-lg);
+        border-radius: var(--radius-md);
+    }
+    
+    .patient-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    
+    .patient-form .form-row.triple {
+        grid-template-columns: 1fr;
+    }
+    
+    .activities-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-nav-content {
+        flex-direction: column;
+        gap: var(--spacing-md);
+    }
+    
+    .form-nav-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
+
+@media (max-width: 576px) {
+    .form-container {
+        padding: var(--spacing-md);
+        border-radius: var(--radius-sm);
+    }
+    
+    .form-section {
+        margin-bottom: var(--spacing-lg);
+        padding-bottom: var(--spacing-md);
+    }
+    
+    .form-navigation {
+        position: static;
+        margin-top: var(--spacing-md);
+    }
+    
+    .autosave-indicator {
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+        left: var(--spacing-sm);
+        text-align: center;
+    }
+}

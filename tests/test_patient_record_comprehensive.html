@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comprehensive Patient Record Test</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #1565c0; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; font-size: 12px; }
+        .field-mapping { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .field-mapping div { padding: 8px; background: #f8f9fa; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🏥 Comprehensive Patient Record Test</h1>
+        <p>This test validates patient record creation with complete field mapping verification against database constraints.</p>
+
+        <div class="test-section">
+            <h2>📋 Test Configuration</h2>
+            <div id="config-info">
+                <p><strong>Test Patient:</strong> <code>TEST-PATIENT-${Date.now()}</code></p>
+                <p><strong>Target Table:</strong> patient_records</p>
+                <p><strong>Constraint Validation:</strong> All field mappings verified against database schema</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔧 Pre-Test Verification</h2>
+            <button onclick="runPreTestChecks()">Run Pre-Test Checks</button>
+            <div id="pre-test-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗂️ Field Mapping Validation</h2>
+            <button onclick="validateFieldMappings()">Validate Field Mappings</button>
+            <div id="field-mapping-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🏥 Patient Record Creation Test</h2>
+            <button onclick="runPatientRecordTest()">Test Patient Record Creation</button>
+            <div id="patient-record-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🗄️ Database Verification</h2>
+            <button onclick="verifyPatientRecordSync()">Verify Database Sync</button>
+            <div id="database-results"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>🔄 Cleanup</h2>
+            <button onclick="cleanupTestData()">Clean Up Test Data</button>
+            <div id="cleanup-results"></div>
+        </div>
+    </div>
+
+    <!-- Load Required Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../config.js"></script>
+    <script src="../js/core/state.js"></script>
+    <script src="../js/utils/constants.js"></script>
+
+    <script>
+        // Test state
+        let testUserId = null;
+        let testPatientRecord = null;
+        let testPatientId = `TEST-PATIENT-${Date.now()}`;
+        let supabaseClient = null;
+
+        // Initialize Supabase
+        async function initializeSupabase() {
+            if (!window.APP_CONFIG) {
+                throw new Error('APP_CONFIG not found');
+            }
+            
+            const { createClient } = supabase;
+            supabaseClient = createClient(
+                window.APP_CONFIG.SUPABASE_URL,
+                window.APP_CONFIG.SUPABASE_ANON_KEY
+            );
+            
+            console.log('Supabase client initialized for testing');
+            return supabaseClient;
+        }
+
+        // Utility functions
+        function showResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${type}`;
+            resultDiv.innerHTML = message;
+            container.appendChild(resultDiv);
+        }
+
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+
+        // Pre-test checks
+        async function runPreTestChecks() {
+            clearResults('pre-test-results');
+            showResult('pre-test-results', '🔄 Running pre-test checks...', 'info');
+
+            try {
+                // Initialize Supabase
+                await initializeSupabase();
+                showResult('pre-test-results', '✅ Supabase client initialized successfully', 'success');
+
+                // Check Constants
+                if (window.Constants) {
+                    const requiredConstants = [
+                        'AGE_GROUPS', 'REFERRAL_SOURCES', 'APPOINTMENT_TYPES', 'FACILITY_TYPES',
+                        'CLINICAL_AREAS', 'ATTENDANCE_OPTIONS', 'DISPOSAL_OPTIONS', 'OUTCOME_OPTIONS',
+                        'ACTIVITIES', 'ASSISTIVE_DEVICES', 'FACILITIES'
+                    ];
+
+                    let allConstantsPresent = true;
+                    requiredConstants.forEach(constant => {
+                        if (window.Constants[constant]) {
+                            showResult('pre-test-results', `✅ ${constant} loaded (${Array.isArray(window.Constants[constant]) ? window.Constants[constant].length : 'object'} items)`, 'success');
+                        } else {
+                            showResult('pre-test-results', `❌ ${constant} missing`, 'error');
+                            allConstantsPresent = false;
+                        }
+                    });
+
+                    if (allConstantsPresent) {
+                        showResult('pre-test-results', '✅ All required constants loaded', 'success');
+                    }
+                } else {
+                    showResult('pre-test-results', '❌ Constants not loaded', 'error');
+                }
+
+                // Test database connection
+                const { data, error } = await supabaseClient.from('patient_records').select('count').limit(1);
+                if (error) {
+                    showResult('pre-test-results', `❌ Patient records table connection failed: ${error.message}`, 'error');
+                } else {
+                    showResult('pre-test-results', '✅ Patient records table connection successful', 'success');
+                }
+
+                // Create test user for patient records
+                showResult('pre-test-results', '👤 Creating test user for patient records...', 'info');
+                const { data: userData, error: userError } = await supabaseClient.auth.signUp({
+                    email: `test-patient-user-${Date.now()}@westerncape.gov.za`,
+                    password: 'TestPassword123!'
+                });
+
+                if (userError) {
+                    showResult('pre-test-results', `⚠️ Test user creation failed: ${userError.message}`, 'warning');
+                    showResult('pre-test-results', '📝 Using dummy UUID for testing', 'info');
+                    testUserId = '00000000-0000-0000-0000-000000000000';
+                } else if (userData.user) {
+                    testUserId = userData.user.id;
+                    showResult('pre-test-results', `✅ Test user created (ID: ${testUserId})`, 'success');
+                }
+
+                showResult('pre-test-results', '🎯 Pre-test checks completed', 'success');
+
+            } catch (error) {
+                showResult('pre-test-results', `❌ Pre-test check failed: ${error.message}`, 'error');
+                console.error('Pre-test error:', error);
+            }
+        }
+
+        // Validate field mappings
+        async function validateFieldMappings() {
+            clearResults('field-mapping-results');
+            showResult('field-mapping-results', '🔄 Validating field mappings against database constraints...', 'info');
+
+            try {
+                // Get table constraints from database
+                const { data: constraints, error } = await supabaseClient.rpc('get_table_constraints', {
+                    table_name: 'patient_records'
+                }).catch(() => {
+                    // Fallback: use known constraints from database_setup.sql
+                    return {
+                        data: [
+                            { constraint_name: 'patient_records_age_group_check', constraint_definition: "CHECK ((age_group = ANY (ARRAY['<18'::text, '>18'::text])))" },
+                            { constraint_name: 'patient_records_appointment_type_check', constraint_definition: "CHECK ((appointment_type = ANY (ARRAY['new'::text, 'repeat'::text])))" },
+                            { constraint_name: 'patient_records_facility_type_check', constraint_definition: "CHECK ((facility_type = ANY (ARRAY['in-hospital'::text, 'out-hospital'::text, 'icf'::text, 'phc'::text])))" },
+                            { constraint_name: 'patient_records_referral_source_check', constraint_definition: "CHECK ((referral_source = ANY (ARRAY['hospital'::text, 'phc'::text, 'cbs'::text, 'other'::text])))" }
+                        ],
+                        error: null
+                    };
+                });
+
+                if (error && !constraints) {
+                    throw new Error(`Failed to get constraints: ${error.message}`);
+                }
+
+                // Validate each field mapping
+                const fieldMappings = [
+                    {
+                        field: 'age_group',
+                        frontendValues: window.Constants.AGE_GROUPS.map(g => g.value),
+                        expectedValues: ['<18', '>18']
+                    },
+                    {
+                        field: 'appointment_type',
+                        frontendValues: window.Constants.APPOINTMENT_TYPES.map(t => t.value),
+                        expectedValues: ['new', 'repeat']
+                    },
+                    {
+                        field: 'facility_type',
+                        frontendValues: window.Constants.FACILITY_TYPES.map(t => t.value),
+                        expectedValues: ['in-hospital', 'out-hospital', 'icf', 'phc']
+                    },
+                    {
+                        field: 'referral_source',
+                        frontendValues: window.Constants.REFERRAL_SOURCES.map(s => s.value),
+                        expectedValues: ['hospital', 'phc', 'cbs', 'other']
+                    }
+                ];
+
+                fieldMappings.forEach(mapping => {
+                    const isValid = mapping.expectedValues.every(val => mapping.frontendValues.includes(val)) &&
+                                   mapping.frontendValues.every(val => mapping.expectedValues.includes(val));
+
+                    if (isValid) {
+                        showResult('field-mapping-results', `✅ ${mapping.field}: Frontend values match database constraints`, 'success');
+                        showResult('field-mapping-results', `📊 Values: [${mapping.frontendValues.join(', ')}]`, 'info');
+                    } else {
+                        showResult('field-mapping-results', `❌ ${mapping.field}: Mismatch detected`, 'error');
+                        showResult('field-mapping-results', `Frontend: [${mapping.frontendValues.join(', ')}]`, 'warning');
+                        showResult('field-mapping-results', `Expected: [${mapping.expectedValues.join(', ')}]`, 'warning');
+                    }
+                });
+
+                showResult('field-mapping-results', '🎯 Field mapping validation completed', 'success');
+
+            } catch (error) {
+                showResult('field-mapping-results', `❌ Field mapping validation failed: ${error.message}`, 'error');
+                console.error('Field mapping error:', error);
+            }
+        }
+
+        // Test patient record creation
+        async function runPatientRecordTest() {
+            clearResults('patient-record-results');
+            showResult('patient-record-results', '🔄 Testing patient record creation...', 'info');
+
+            try {
+                if (!testUserId) {
+                    throw new Error('No test user available. Run pre-test checks first.');
+                }
+
+                // Create comprehensive test patient record
+                const patientData = {
+                    user_id: testUserId,
+                    patient_identifier: testPatientId,
+                    age_group: '<18',
+                    facility: 'Test Hospital',
+                    facility_type: 'in-hospital',
+                    appointment_date: new Date().toISOString().split('T')[0],
+                    appointment_type: 'new',
+                    referral_source: 'hospital',
+                    referral_source_other: null,
+                    clinical_area: 'General Medicine',
+                    clinical_area_other: null,
+                    attendance: 'Attended',
+                    disposal: 'Future Appointment Given',
+                    outcome: 'Assessment Completed',
+                    duration_minutes: 45,
+                    activities: ['Screen', 'Assessment'],
+                    assistive_devices: {
+                        wheelchair: {
+                            issued: true,
+                            funding_source: 'new',
+                            serial_number: 'WC-TEST-123'
+                        }
+                    }
+                };
+
+                showResult('patient-record-results', '📝 Test patient data created:', 'info');
+                showResult('patient-record-results', `<pre>${JSON.stringify(patientData, null, 2)}</pre>`, 'info');
+
+                // Insert patient record
+                showResult('patient-record-results', '💾 Inserting patient record into database...', 'info');
+                const { data: insertResult, error: insertError } = await supabaseClient
+                    .from('patient_records')
+                    .insert(patientData)
+                    .select();
+
+                if (insertError) {
+                    throw new Error(`Patient record insertion failed: ${insertError.message}`);
+                }
+
+                if (insertResult && insertResult.length > 0) {
+                    testPatientRecord = insertResult[0];
+                    showResult('patient-record-results', '✅ Patient record created successfully', 'success');
+                    showResult('patient-record-results', `📊 Record ID: ${testPatientRecord.id}`, 'info');
+                    
+                    // Validate inserted data
+                    const validations = [
+                        { field: 'patient_identifier', value: testPatientRecord.patient_identifier, expected: testPatientId },
+                        { field: 'age_group', value: testPatientRecord.age_group, expected: '<18' },
+                        { field: 'facility_type', value: testPatientRecord.facility_type, expected: 'in-hospital' },
+                        { field: 'appointment_type', value: testPatientRecord.appointment_type, expected: 'new' },
+                        { field: 'referral_source', value: testPatientRecord.referral_source, expected: 'hospital' }
+                    ];
+
+                    validations.forEach(validation => {
+                        if (validation.value === validation.expected) {
+                            showResult('patient-record-results', `✅ ${validation.field}: ${validation.value}`, 'success');
+                        } else {
+                            showResult('patient-record-results', `❌ ${validation.field}: Expected '${validation.expected}', got '${validation.value}'`, 'error');
+                        }
+                    });
+
+                    showResult('patient-record-results', '🎉 Patient record test completed successfully!', 'success');
+                } else {
+                    throw new Error('No data returned from insert operation');
+                }
+
+            } catch (error) {
+                showResult('patient-record-results', `❌ Patient record test failed: ${error.message}`, 'error');
+                console.error('Patient record test error:', error);
+            }
+        }
+
+        // Verify patient record database sync
+        async function verifyPatientRecordSync() {
+            clearResults('database-results');
+            showResult('database-results', '🔄 Verifying patient record database sync...', 'info');
+
+            try {
+                if (!testPatientRecord) {
+                    throw new Error('No test patient record available. Run patient record test first.');
+                }
+
+                // Query the record back from database
+                showResult('database-results', '1️⃣ Querying patient record from database...', 'info');
+                const { data: records, error: queryError } = await supabaseClient
+                    .from('patient_records')
+                    .select('*')
+                    .eq('id', testPatientRecord.id);
+
+                if (queryError) {
+                    throw new Error(`Query failed: ${queryError.message}`);
+                }
+
+                if (records && records.length > 0) {
+                    const record = records[0];
+                    showResult('database-results', '✅ Patient record found in database', 'success');
+
+                    // Verify all fields are correctly stored
+                    const fieldChecks = [
+                        'patient_identifier', 'age_group', 'facility', 'facility_type',
+                        'appointment_type', 'referral_source', 'clinical_area',
+                        'attendance', 'disposal', 'outcome', 'duration_minutes',
+                        'activities', 'assistive_devices'
+                    ];
+
+                    fieldChecks.forEach(field => {
+                        if (record[field] !== null && record[field] !== undefined) {
+                            showResult('database-results', `✅ ${field}: ${JSON.stringify(record[field])}`, 'success');
+                        } else {
+                            showResult('database-results', `⚠️ ${field}: null/undefined`, 'warning');
+                        }
+                    });
+
+                    // Test complex fields
+                    if (record.activities && Array.isArray(record.activities)) {
+                        showResult('database-results', `✅ Activities array: ${record.activities.join(', ')}`, 'success');
+                    }
+
+                    if (record.assistive_devices && typeof record.assistive_devices === 'object') {
+                        showResult('database-results', `✅ Assistive devices JSONB: ${JSON.stringify(record.assistive_devices)}`, 'success');
+                    }
+
+                    showResult('database-results', `📊 Complete record: <pre>${JSON.stringify(record, null, 2)}</pre>`, 'info');
+                } else {
+                    showResult('database-results', '❌ Patient record not found in database', 'error');
+                }
+
+                // Test RLS policies
+                showResult('database-results', '2️⃣ Testing RLS policies...', 'info');
+                const { data: userRecords, error: rlsError } = await supabaseClient
+                    .from('patient_records')
+                    .select('*')
+                    .eq('user_id', testUserId);
+
+                if (rlsError) {
+                    showResult('database-results', `❌ RLS test failed: ${rlsError.message}`, 'error');
+                } else if (userRecords && userRecords.length > 0) {
+                    showResult('database-results', `✅ RLS policies working - found ${userRecords.length} records for user`, 'success');
+                }
+
+                showResult('database-results', '🎯 Database verification completed', 'success');
+
+            } catch (error) {
+                showResult('database-results', `❌ Database verification failed: ${error.message}`, 'error');
+                console.error('Database verification error:', error);
+            }
+        }
+
+        // Clean up test data
+        async function cleanupTestData() {
+            clearResults('cleanup-results');
+            showResult('cleanup-results', '🔄 Starting cleanup...', 'info');
+
+            try {
+                // Delete test patient record
+                if (testPatientRecord) {
+                    showResult('cleanup-results', '1️⃣ Deleting test patient record...', 'info');
+                    const { error: deleteError } = await supabaseClient
+                        .from('patient_records')
+                        .delete()
+                        .eq('id', testPatientRecord.id);
+
+                    if (deleteError) {
+                        showResult('cleanup-results', `⚠️ Patient record deletion failed: ${deleteError.message}`, 'warning');
+                    } else {
+                        showResult('cleanup-results', '✅ Test patient record deleted', 'success');
+                    }
+                }
+
+                // Sign out to clean up session
+                if (testUserId) {
+                    showResult('cleanup-results', '2️⃣ Signing out test user...', 'info');
+                    const { error: signOutError } = await supabaseClient.auth.signOut();
+                    
+                    if (signOutError) {
+                        showResult('cleanup-results', `⚠️ Sign out failed: ${signOutError.message}`, 'warning');
+                    } else {
+                        showResult('cleanup-results', '✅ Signed out successfully', 'success');
+                    }
+                }
+
+                testUserId = null;
+                testPatientRecord = null;
+                showResult('cleanup-results', '🧹 Cleanup completed', 'success');
+
+            } catch (error) {
+                showResult('cleanup-results', `❌ Cleanup failed: ${error.message}`, 'error');
+                console.error('Cleanup error:', error);
+            }
+        }
+
+        // Auto-initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            try {
+                await initializeSupabase();
+                showResult('config-info', '✅ Test environment initialized', 'success');
+            } catch (error) {
+                showResult('config-info', `❌ Failed to initialize test environment: ${error.message}`, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

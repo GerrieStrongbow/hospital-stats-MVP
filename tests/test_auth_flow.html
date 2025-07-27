@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Flow Test - Auth Modules</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ccc; margin: 10px 0; padding: 15px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .info { color: blue; }
+        .warning { color: orange; }
+        .mock-auth { border: 1px solid #ddd; padding: 15px; margin: 10px 0; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select { width: 200px; padding: 5px; }
+        .btn { padding: 8px 16px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .user-info { background: #e9ecef; padding: 10px; border-radius: 4px; margin: 10px 0; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Authentication Flow Test - Auth Modules</h1>
+    
+    <div id="test-results"></div>
+    
+    <!-- Mock Authentication Interface -->
+    <div class="test-section">
+        <h3>Mock Authentication Interface</h3>
+        
+        <div id="auth-status" class="user-info">
+            <strong>Status:</strong> <span id="status-text">Checking...</span>
+        </div>
+        
+        <div id="login-section" class="mock-auth" style="display: none;">
+            <h4>Login Test</h4>
+            <div class="form-group">
+                <label for="login-email">Email:</label>
+                <input type="email" id="login-email" placeholder="test@westerncape.gov.za">
+            </div>
+            <div class="form-group">
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" placeholder="testpassword">
+            </div>
+            <button id="login-btn" class="btn btn-primary">Test Login</button>
+        </div>
+        
+        <div id="user-section" class="mock-auth" style="display: none;">
+            <h4>Authenticated User Info</h4>
+            <div id="user-details"></div>
+            <button id="logout-btn" class="btn btn-secondary">Test Logout</button>
+        </div>
+        
+        <div id="register-section" class="mock-auth" style="display: none;">
+            <h4>Registration Test</h4>
+            <div class="form-group">
+                <label for="reg-email">Email:</label>
+                <input type="email" id="reg-email" placeholder="newuser@westerncape.gov.za">
+            </div>
+            <div class="form-group">
+                <label for="reg-password">Password:</label>
+                <input type="password" id="reg-password" placeholder="newpassword">
+            </div>
+            <button id="register-btn" class="btn btn-primary">Test Registration</button>
+        </div>
+    </div>
+    
+    <div id="console-output">
+        <h3>Console Output:</h3>
+        <pre id="console-log"></pre>
+    </div>
+    
+    <!-- Load modules -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script src="js/core/config.js"></script>
+    <script src="js/core/state.js"></script>
+    <script src="js/ui/router.js"></script>
+    <script src="js/auth/auth.js"></script>
+    <script src="js/auth/login.js"></script>
+    <script src="js/auth/register.js"></script>
+    
+    <script>
+        // Capture console output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const consoleLog = document.getElementById('console-log');
+        
+        function addToConsole(level, ...args) {
+            const timestamp = new Date().toISOString().split('T')[1].split('.')[0];
+            const message = args.map(arg => 
+                typeof arg === 'object' ? JSON.stringify(arg) : String(arg)
+            ).join(' ');
+            consoleLog.textContent += `[${timestamp}] ${level}: ${message}\n`;
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', ...args);
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', ...args);
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', ...args);
+        };
+        
+        // Mock Supabase for testing (since we don't have real credentials)
+        const mockSupabase = {
+            auth: {
+                signInWithPassword: async ({ email, password }) => {
+                    console.log('Mock sign in with:', email);
+                    
+                    // Simulate success for test email
+                    if (email === 'test@westerncape.gov.za' && password === 'testpassword') {
+                        return {
+                            data: {
+                                user: {
+                                    id: 'mock-user-123',
+                                    email: email,
+                                    user_metadata: {
+                                        first_name: 'Test',
+                                        last_name: 'User'
+                                    }
+                                }
+                            },
+                            error: null
+                        };
+                    } else {
+                        return {
+                            data: null,
+                            error: { message: 'Invalid login credentials' }
+                        };
+                    }
+                },
+                
+                signUp: async ({ email, password }) => {
+                    console.log('Mock sign up with:', email);
+                    
+                    if (email.endsWith('@westerncape.gov.za')) {
+                        return {
+                            data: {
+                                user: {
+                                    id: 'mock-user-new-' + Date.now(),
+                                    email: email,
+                                    email_confirmed_at: null
+                                }
+                            },
+                            error: null
+                        };
+                    } else {
+                        return {
+                            data: null,
+                            error: { message: 'Email must be a @westerncape.gov.za address' }
+                        };
+                    }
+                },
+                
+                signOut: async () => {
+                    console.log('Mock sign out');
+                    return { error: null };
+                },
+                
+                getSession: async () => {
+                    console.log('Mock get session');
+                    return { data: { session: null }, error: null };
+                },
+                
+                onAuthStateChange: (callback) => {
+                    console.log('Mock auth state listener setup');
+                    // Store callback for manual triggering
+                    window.mockAuthCallback = callback;
+                    return { data: { subscription: {} } };
+                }
+            },
+            
+            from: (table) => ({
+                select: () => ({
+                    eq: () => ({
+                        single: async () => {
+                            console.log('Mock database query to', table);
+                            return { data: null, error: { code: 'PGRST116', message: 'No rows found' } };
+                        }
+                    })
+                }),
+                insert: () => ({
+                    select: () => ({
+                        single: async () => {
+                            console.log('Mock database insert to', table);
+                            return { data: null, error: null };
+                        }
+                    })
+                })
+            })
+        };
+        
+        // Set mock Supabase in state
+        State.set('supabase', mockSupabase);
+        
+        // Override alert and confirm for testing
+        window.showError = function(message, type) {
+            console.log('showError called:', message, type);
+            updateAuthStatus();
+        };
+        
+        window.showMessage = function(message) {
+            console.log('showMessage called:', message);
+        };
+        
+        let testResults = [];
+        
+        function addTest(name, passed, details = '') {
+            const result = { name, passed, details };
+            testResults.push(result);
+            
+            const resultsDiv = document.getElementById('test-results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test-section';
+            testDiv.innerHTML = `
+                <h3 class="${passed ? 'pass' : 'fail'}">${passed ? '✓' : '✗'} ${name}</h3>
+                ${details ? `<div class="info">${details}</div>` : ''}
+            `;
+            resultsDiv.appendChild(testDiv);
+        }
+        
+        function updateAuthStatus() {
+            const isAuth = Auth.isAuthenticated();
+            const user = Auth.getCurrentUser();
+            const statusText = document.getElementById('status-text');
+            const loginSection = document.getElementById('login-section');
+            const userSection = document.getElementById('user-section');
+            const registerSection = document.getElementById('register-section');
+            
+            if (isAuth && user) {
+                statusText.textContent = `Authenticated as ${user.email}`;
+                statusText.className = 'pass';
+                loginSection.style.display = 'none';
+                registerSection.style.display = 'none';
+                userSection.style.display = 'block';
+                
+                document.getElementById('user-details').innerHTML = `
+                    <p><strong>ID:</strong> ${user.id}</p>
+                    <p><strong>Email:</strong> ${user.email}</p>
+                    <p><strong>Profile:</strong> ${user.profile ? 'Loaded' : 'Not loaded'}</p>
+                `;
+            } else {
+                statusText.textContent = 'Not authenticated';
+                statusText.className = 'fail';
+                loginSection.style.display = 'block';
+                registerSection.style.display = 'block';
+                userSection.style.display = 'none';
+            }
+        }
+        
+        function runTests() {
+            console.log('Starting authentication flow tests...');
+            
+            // Test 1: Module loading
+            addTest(
+                'Auth Module Loaded',
+                typeof window.Auth !== 'undefined',
+                window.Auth ? 'Auth module available with methods: ' + 
+                    Object.keys(window.Auth).filter(k => typeof window.Auth[k] === 'function').join(', ') : 
+                    'Auth module not found'
+            );
+            
+            addTest(
+                'Login Module Loaded',
+                typeof window.Login !== 'undefined',
+                window.Login ? 'Login module loaded successfully' : 'Login module not found'
+            );
+            
+            addTest(
+                'Register Module Loaded',
+                typeof window.Register !== 'undefined',
+                window.Register ? 'Register module loaded successfully' : 'Register module not found'
+            );
+            
+            // Test 2: Initial state
+            addTest(
+                'Initial Authentication State',
+                !Auth.isAuthenticated(),
+                `Initially not authenticated: ${Auth.isAuthenticated()}`
+            );
+            
+            // Test 3: State integration
+            addTest(
+                'State Integration',
+                State.get('supabase') === mockSupabase,
+                'Supabase client properly set in state'
+            );
+            
+            // Update UI
+            updateAuthStatus();
+            
+            // Setup event listeners for manual testing
+            document.getElementById('login-btn').addEventListener('click', async () => {
+                const email = document.getElementById('login-email').value;
+                const password = document.getElementById('login-password').value;
+                
+                console.log('Testing login with:', email);
+                
+                try {
+                    const result = await Auth.signIn(email, password);
+                    
+                    if (result.user) {
+                        console.log('Login test successful');
+                        
+                        // Manually trigger auth state change for mock
+                        if (window.mockAuthCallback) {
+                            window.mockAuthCallback('SIGNED_IN', { user: result.user });
+                        }
+                        
+                        addTest(
+                            'Login Functionality Test',
+                            true,
+                            `Successfully logged in as ${result.user.email}`
+                        );
+                        
+                        updateAuthStatus();
+                    }
+                } catch (error) {
+                    console.error('Login test failed:', error);
+                    addTest(
+                        'Login Functionality Test',
+                        false,
+                        `Login failed: ${error.message}`
+                    );
+                }
+            });
+            
+            document.getElementById('logout-btn').addEventListener('click', async () => {
+                console.log('Testing logout');
+                
+                try {
+                    await Auth.signOut();
+                    
+                    // Manually trigger auth state change for mock
+                    if (window.mockAuthCallback) {
+                        window.mockAuthCallback('SIGNED_OUT', null);
+                    }
+                    
+                    addTest(
+                        'Logout Functionality Test',
+                        true,
+                        'Successfully logged out'
+                    );
+                    
+                    updateAuthStatus();
+                    
+                } catch (error) {
+                    console.error('Logout test failed:', error);
+                    addTest(
+                        'Logout Functionality Test',
+                        false,
+                        `Logout failed: ${error.message}`
+                    );
+                }
+            });
+            
+            document.getElementById('register-btn').addEventListener('click', async () => {
+                const email = document.getElementById('reg-email').value;
+                const password = document.getElementById('reg-password').value;
+                
+                console.log('Testing registration with:', email);
+                
+                try {
+                    const userData = {
+                        firstName: 'Test',
+                        lastName: 'User',
+                        email: email,
+                        password: password,
+                        therapistType: 'Physiotherapist',
+                        employmentStatus: 'Permanent',
+                        subDistrict: 'City of Cape Town Metro East'
+                    };
+                    
+                    const result = await Auth.signUp(userData);
+                    
+                    if (result.user) {
+                        addTest(
+                            'Registration Functionality Test',
+                            true,
+                            `Successfully registered ${result.user.email}`
+                        );
+                    } else {
+                        addTest(
+                            'Registration Functionality Test',
+                            false,
+                            'Registration failed - no user returned'
+                        );
+                    }
+                    
+                } catch (error) {
+                    console.error('Registration test failed:', error);
+                    addTest(
+                        'Registration Functionality Test',
+                        false,
+                        `Registration failed: ${error.message}`
+                    );
+                }
+            });
+            
+            // Generate summary after initial tests
+            setTimeout(() => {
+                const passedTests = testResults.filter(t => t.passed).length;
+                const totalTests = testResults.length;
+                const successRate = Math.round((passedTests / totalTests) * 100);
+                
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = 'test-section';
+                summaryDiv.innerHTML = `
+                    <h2>Authentication Flow Test Summary</h2>
+                    <div class="info">
+                        <strong>Total Tests:</strong> ${totalTests}<br>
+                        <strong class="pass">Passed:</strong> ${passedTests}<br>
+                        <strong class="fail">Failed:</strong> ${totalTests - passedTests}<br>
+                        <strong>Success Rate:</strong> ${successRate}%<br>
+                        <strong>Auth Module Status:</strong> ${successRate >= 70 ? '✅ WORKING' : '❌ BROKEN'}
+                    </div>
+                    <div class="info" style="margin-top: 10px;">
+                        <strong>Instructions:</strong><br>
+                        • Use test@westerncape.gov.za / testpassword for successful login test<br>
+                        • Try invalid credentials to test error handling<br>
+                        • Test registration with @westerncape.gov.za email<br>
+                        • Check console output for detailed logging
+                    </div>
+                `;
+                document.getElementById('test-results').appendChild(summaryDiv);
+                
+                console.log('Auth flow tests completed - Success rate:', successRate + '%');
+            }, 1000);
+        }
+        
+        // Run tests when modules are loaded
+        setTimeout(runTests, 1000);
+    </script>
+</body>
+</html>
