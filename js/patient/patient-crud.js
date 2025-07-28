@@ -32,7 +32,7 @@
                 // Delay to allow form to render
                 setTimeout(() => {
                     this.setupFormButtons();
-                }, 100);
+                }, window.Constants?.APP_SETTINGS?.UI?.LOADING_DELAY || 100);
             }
         },
         
@@ -63,47 +63,79 @@
         addEditingButtons(container) {
             console.log('Adding editing buttons (including delete)');
             
-            container.innerHTML = `
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary" id="save-patient">
-                        <span class="btn-icon">💾</span>
-                        Save Changes
-                    </button>
-                    <button type="button" class="btn btn-danger" id="delete-patient">
-                        <span class="btn-icon">🗑️</span>
-                        Delete Patient
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="Router.navigate('patients')">
-                        <span class="btn-icon">↩️</span>
-                        Back to List
-                    </button>
-                </div>
-            `;
+            // Clear container safely
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            
+            // Create button group
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
+            
+            // Save button
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'submit';
+            saveBtn.className = 'btn btn-primary';
+            saveBtn.id = 'save-patient';
+            saveBtn.innerHTML = '<span class="btn-icon">💾</span> Save Changes';
+            
+            // Delete button
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'btn btn-danger';
+            deleteBtn.id = 'delete-patient';
+            deleteBtn.innerHTML = '<span class="btn-icon">🗑️</span> Delete Patient';
+            
+            // Back button
+            const backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'btn btn-secondary';
+            backBtn.textContent = '↩️ Back to List';
+            backBtn.addEventListener('click', () => Router.navigate('patients'));
+            
+            buttonGroup.appendChild(saveBtn);
+            buttonGroup.appendChild(deleteBtn);
+            buttonGroup.appendChild(backBtn);
+            container.appendChild(buttonGroup);
         },
         
         // Add buttons for new patient
         addNewPatientButtons(container) {
             console.log('Adding new patient buttons (no delete)');
             
-            container.innerHTML = `
-                <div class="button-group">
-                    <button type="submit" class="btn btn-primary" id="save-patient">
-                        <span class="btn-icon">💾</span>
-                        Save Patient
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="Router.navigate('patients')">
-                        <span class="btn-icon">↩️</span>
-                        Back to List
-                    </button>
-                </div>
-            `;
+            // Clear container safely
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            
+            // Create button group
+            const buttonGroup = document.createElement('div');
+            buttonGroup.className = 'button-group';
+            
+            // Save button
+            const saveBtn = document.createElement('button');
+            saveBtn.type = 'submit';
+            saveBtn.className = 'btn btn-primary';
+            saveBtn.id = 'save-patient';
+            saveBtn.innerHTML = '<span class="btn-icon">💾</span> Save Patient';
+            
+            // Back button
+            const backBtn = document.createElement('button');
+            backBtn.type = 'button';
+            backBtn.className = 'btn btn-secondary';
+            backBtn.textContent = '↩️ Back to List';
+            backBtn.addEventListener('click', () => Router.navigate('patients'));
+            
+            buttonGroup.appendChild(saveBtn);
+            buttonGroup.appendChild(backBtn);
+            container.appendChild(buttonGroup);
         },
         
         // Handle form submission
         handleFormSubmit(e) {
             if (e.target && e.target.id === 'patient-form') {
                 e.preventDefault();
-                console.log('Patient form submitted');
+                console.log('Patient form submitted via CRUD handler');
                 this.savePatient();
             }
         },
@@ -145,7 +177,14 @@
                 const isEditing = currentData.isEditing;
                 const patientId = currentData.patientId;
                 
-                console.log('Save context:', { isEditing, patientId, hasSupabase: !!State.get('supabase') });
+                console.log('Save context:', { 
+                    isEditing, 
+                    patientId, 
+                    hasSupabase: !!State.get('supabase'),
+                    currentData: currentData,
+                    formDataKeys: Object.keys(formData),
+                    patientIdentifier: formData.patient_identifier
+                });
                 
                 let result;
                 if (isEditing) {
@@ -160,7 +199,7 @@
                     // Navigate back to list after short delay
                     setTimeout(() => {
                         Router.navigate('patients');
-                    }, 1500);
+                    }, window.Constants?.APP_SETTINGS?.UI?.NAVIGATION_DELAY || 1500);
                 } else {
                     throw new Error(result.error || 'Save operation failed');
                 }
@@ -353,7 +392,7 @@
                 // Navigate back to list after short delay
                 setTimeout(() => {
                     Router.navigate('patients');
-                }, 1500);
+                }, window.Constants?.APP_SETTINGS?.UI?.NAVIGATION_DELAY || 1500);
                 
             } catch (error) {
                 console.error('Delete patient error:', error);
@@ -450,14 +489,19 @@
             
             // Validate patient ID format
             if (data.patient_identifier) {
-                const validation = Config.VALIDATION.PATIENT_ID;
-                if (data.patient_identifier.length < validation.MIN_LENGTH) {
-                    errors.push(`Patient ID must be at least ${validation.MIN_LENGTH} characters`);
+                const validation = window.Constants?.APP_SETTINGS?.VALIDATION || Config.VALIDATION.PATIENT_ID;
+                const patientIdValidation = {
+                    MIN_LENGTH: validation.PATIENT_ID_MIN_LENGTH || validation.MIN_LENGTH || 2,
+                    MAX_LENGTH: validation.PATIENT_ID_MAX_LENGTH || validation.MAX_LENGTH || 20,
+                    PATTERN: /^[A-Za-z0-9_-]+$/
+                };
+                if (data.patient_identifier.length < patientIdValidation.MIN_LENGTH) {
+                    errors.push(`Patient ID must be at least ${patientIdValidation.MIN_LENGTH} characters`);
                 }
-                if (data.patient_identifier.length > validation.MAX_LENGTH) {
-                    errors.push(`Patient ID must be no more than ${validation.MAX_LENGTH} characters`);
+                if (data.patient_identifier.length > patientIdValidation.MAX_LENGTH) {
+                    errors.push(`Patient ID must be no more than ${patientIdValidation.MAX_LENGTH} characters`);
                 }
-                if (!validation.PATTERN.test(data.patient_identifier)) {
+                if (!patientIdValidation.PATTERN.test(data.patient_identifier)) {
                     errors.push('Patient ID can only contain letters, numbers, hyphens, and underscores');
                 }
             }
@@ -471,7 +515,7 @@
         // Save to localStorage
         saveToLocalStorage(record) {
             try {
-                const storageKey = Config.STORAGE_KEYS.PATIENT_RECORDS;
+                const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
                 const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 
                 existing.push(record);
@@ -487,7 +531,7 @@
         // Update in localStorage
         updateInLocalStorage(updatedRecord) {
             try {
-                const storageKey = Config.STORAGE_KEYS.PATIENT_RECORDS;
+                const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
                 const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 
                 const index = existing.findIndex(r => 
@@ -512,7 +556,7 @@
         // Delete from localStorage
         deleteFromLocalStorage(patientId) {
             try {
-                const storageKey = Config.STORAGE_KEYS.PATIENT_RECORDS;
+                const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
                 const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
                 
                 const filtered = existing.filter(r => 

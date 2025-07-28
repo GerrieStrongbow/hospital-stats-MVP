@@ -284,3 +284,107 @@
         gap: var(--spacing-xs);
     }
 }
+
+/* Patient list with delete functionality */
+.patient-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+}
+
+.patient-header h4 {
+    margin: 0 0 var(--spacing-xs) 0;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
+}
+
+.patient-header .text-secondary {
+    font-size: var(--font-size-sm);
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.sync-status {
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sync-status.synced {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--accent-color);
+}
+
+.sync-status.pending {
+    background-color: rgba(245, 124, 0, 0.1);
+    color: var(--warning-color);
+}
+
+/* List item layout with delete button */
+.list-item {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: relative;
+}
+
+.list-item .list-item-actions {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    z-index: 2;
+}
+
+.list-item .btn-sm {
+    padding: var(--spacing-xs);
+    min-width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.list-item .btn-danger {
+    background-color: var(--error-color);
+    border: none;
+    color: white;
+    transition: all var(--transition-fast);
+}
+
+.list-item .btn-danger:hover {
+    background-color: #c62828;
+    transform: scale(1.05);
+}
+
+.list-item .btn-danger:active {
+    transform: scale(0.95);
+}
+
+/* Ensure patient content doesn't overlap with delete button */
+.list-item .patient-header,
+.list-item .text-secondary {
+    margin-right: 50px; /* Space for delete button */
+}
+
+@media (max-width: 576px) {
+    .list-item .patient-header,
+    .list-item .text-secondary {
+        margin-right: 45px; /* Smaller space on mobile */
+    }
+    
+    .list-item .btn-sm {
+        min-width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}

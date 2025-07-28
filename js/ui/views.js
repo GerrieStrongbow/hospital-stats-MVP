@@ -368,16 +368,23 @@
             const recordDate = new Date(record.created_at || record.appointment_date);
             const dateString = recordDate.toLocaleDateString() + ' at ' + recordDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             
+            const recordId = record.id || record.local_id;
+            
             return `
-                <div class="list-item" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')">
-                    <div class="patient-header">
+                <div class="list-item">
+                    <div class="patient-header" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')" style="cursor: pointer; flex: 1;">
                         <div>
                             <h4>${record.patient_identifier || 'Unknown Patient'}</h4>
                             <p class="text-secondary">${record.facility || 'Unknown Facility'}</p>
                         </div>
                         <span class="sync-status ${syncStatusClass}">${syncIcon} ${syncStatusText}</span>
                     </div>
-                    <p class="text-secondary">${dateString}</p>
+                    <p class="text-secondary" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')" style="cursor: pointer; flex: 1;">${dateString}</p>
+                    <div class="list-item-actions">
+                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); Views.quickDeletePatient('${recordId}', '${record.source}', '${record.patient_identifier}')" title="Delete patient record" style="padding: 8px; min-width: auto;">
+                            🗑️
+                        </button>
+                    </div>
                 </div>
             `;
         },
@@ -395,20 +402,22 @@
         },
 
         // Utility method to show error messages
-        showError(message) {
+        showError(message, type = 'error') {
             // Create error toast or modal
             const errorDiv = document.createElement('div');
-            errorDiv.className = 'error-message';
+            errorDiv.className = `${type}-message`;
+            const bgColor = type === 'success' ? 'var(--accent-color)' : 'var(--error-color)';
             errorDiv.style.cssText = `
                 position: fixed;
                 top: 20px;
                 right: 20px;
-                background: var(--error-color);
+                background: ${bgColor};
                 color: white;
                 padding: 16px;
                 border-radius: 8px;
                 z-index: 10000;
                 max-width: 300px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             `;
             errorDiv.textContent = message;
             
@@ -454,7 +463,8 @@
         clearPendingRecords() {
             if (confirm('Are you sure you want to clear all pending patient records? This will remove records that haven\'t been synced to the server yet.')) {
                 try {
-                    localStorage.removeItem(Config.STORAGE_KEYS.PATIENT_RECORDS);
+                    const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
+                    localStorage.removeItem(storageKey);
                     this.showMessage('Pending records cleared successfully');
                     
                     // Refresh the current view
@@ -474,11 +484,12 @@
             if (confirm('Are you sure you want to clear ALL local data? This will remove all patient records, preferences, and settings stored locally. You will need to re-download your data from the server.')) {
                 try {
                     // Clear specific keys instead of all localStorage to preserve auth
+                    const constants = window.Constants?.APP_SETTINGS?.STORAGE_KEYS || {};
                     const keysToRemove = [
-                        Config.STORAGE_KEYS.PATIENT_RECORDS,
-                        Config.STORAGE_KEYS.SYNC_METADATA,
-                        Config.STORAGE_KEYS.USER_PREFERENCES,
-                        Config.STORAGE_KEYS.APP_STATE
+                        constants.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS,
+                        constants.SYNC_METADATA || Config.STORAGE_KEYS.SYNC_METADATA,
+                        constants.USER_PREFERENCES || Config.STORAGE_KEYS.USER_PREFERENCES,
+                        constants.APP_STATE || Config.STORAGE_KEYS.APP_STATE
                     ];
                     
                     keysToRemove.forEach(key => {
@@ -496,6 +507,76 @@
                     console.error('Failed to clear localStorage:', error);
                     this.showError('Failed to clear local data');
                 }
+            }
+        },
+
+        // Quick delete patient from list
+        quickDeletePatient(recordId, source, patientIdentifier) {
+            if (confirm(`Are you sure you want to delete patient "${patientIdentifier}"?\n\nThis action cannot be undone.`)) {
+                // Use PatientCRUD to handle the actual deletion
+                this.deletePatientRecord(recordId, source);
+            }
+        },
+
+        // Delete patient record (called by quick delete)
+        async deletePatientRecord(recordId, source) {
+            try {
+                const user = State.get('user');
+                const supabase = State.get('supabase');
+                
+                // Delete from Supabase if it's a synced record
+                if (supabase && user && source === 'supabase') {
+                    try {
+                        const { error } = await supabase
+                            .from('patient_records')
+                            .delete()
+                            .eq('id', recordId)
+                            .eq('user_id', user.id);
+                        
+                        if (error) throw error;
+                        console.log('Patient deleted from Supabase');
+                    } catch (error) {
+                        console.warn('Supabase delete failed:', error);
+                        // Continue to delete from localStorage
+                    }
+                }
+                
+                // Delete from localStorage
+                this.deleteFromLocalStorage(recordId);
+                
+                this.showMessage('Patient record deleted successfully');
+                
+                // Refresh the patient list
+                if (PatientList && PatientList.refresh) {
+                    await PatientList.refresh();
+                } else {
+                    // Fallback: reload the current view
+                    setTimeout(() => {
+                        Router.navigate('patients');
+                    }, 1000);
+                }
+                
+            } catch (error) {
+                console.error('Delete patient error:', error);
+                this.showError('Failed to delete patient: ' + error.message);
+            }
+        },
+
+        // Delete from localStorage helper
+        deleteFromLocalStorage(recordId) {
+            try {
+                const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
+                const existing = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                
+                const filtered = existing.filter(r => 
+                    r.id !== recordId && r.local_id !== recordId
+                );
+                
+                localStorage.setItem(storageKey, JSON.stringify(filtered));
+                console.log('Record deleted from localStorage');
+                
+            } catch (error) {
+                console.error('Failed to delete from localStorage:', error);
             }
         }
     };

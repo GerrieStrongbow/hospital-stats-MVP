@@ -1,4 +1,8 @@
-// Hospital Stats MVP - SPA Router
+/**
+ * Hospital Stats MVP - SPA Router
+ * Handles client-side routing for Single Page Application navigation
+ * Supports hash-based routing with parameters
+ */
 (function(window) {
     'use strict';
     
@@ -119,7 +123,14 @@
             return { route, params };
         },
         
-        // Navigate to a new route
+        /**
+         * Navigate to a specific route programmatically
+         * @param {string} route - The route identifier ('login', 'dashboard', 'patients', etc.)
+         * @param {Object} params - Parameters to pass to the route (optional)
+         * @example
+         * Router.navigate('patients');
+         * Router.navigate('patient', { id: 'patient123', source: 'supabase' });
+         */
         navigate(route, params = {}) {
             console.log('Navigating to:', route, params);
             

@@ -286,7 +286,11 @@
                 TOAST_DURATION: 3000, // 3 seconds
                 ERROR_DURATION: 5000, // 5 seconds
                 DEBOUNCE_DELAY: 300, // 300ms for search
-                PAGE_SIZE: 50 // records per page
+                PAGE_SIZE: 50, // records per page
+                NAVIGATION_DELAY: 1500, // 1.5 seconds after save/delete
+                LOADING_DELAY: 100, // 100ms for UI rendering
+                SYNC_NOTIFICATION_DELAY: 1000, // 1 second after coming online
+                AUTH_CHECK_INTERVAL: 100 // 100ms for auth initialization check
             }
         },
 

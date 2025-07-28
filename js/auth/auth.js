@@ -54,6 +54,14 @@
                 if (session?.user) {
                     console.log('Existing session found for:', session.user.email);
                     await this.handleSignIn(session.user);
+                    
+                    // Only auto-navigate to dashboard if we're on landing/login/register
+                    const currentHash = window.location.hash;
+                    if (!currentHash || currentHash === '#landing' || currentHash === '#login' || currentHash === '#register') {
+                        if (window.Router) {
+                            Router.navigate('dashboard');
+                        }
+                    }
                 } else {
                     console.log('No existing session found');
                 }

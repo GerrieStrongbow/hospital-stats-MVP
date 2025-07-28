@@ -134,7 +134,7 @@
         // Load from localStorage
         async loadFromLocalStorage(patientId) {
             try {
-                const storageKey = Config.STORAGE_KEYS.PATIENT_RECORDS;
+                const storageKey = window.Constants?.APP_SETTINGS?.STORAGE_KEYS?.PATIENT_RECORDS || Config.STORAGE_KEYS.PATIENT_RECORDS;
                 const localData = localStorage.getItem(storageKey);
                 
                 if (localData) {

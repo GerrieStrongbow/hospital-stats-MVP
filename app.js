@@ -10,7 +10,10 @@ const app = {
     isOnline: navigator.onLine
 };
 
-// Initialize Supabase client
+/**
+ * Initialize Supabase client with configuration
+ * @returns {Promise<boolean>} True if initialization successful, false otherwise
+ */
 async function initSupabase() {
     // For MVP, we'll use a config object that can be easily changed
     // In production, this would be injected during build time
@@ -51,7 +54,10 @@ const router = window.Router;
 
 // View rendering is now handled by the Router module
 
-// Sign out functionality
+/**
+ * Sign out current user and redirect to landing page
+ * @returns {Promise<void>}
+ */
 async function signOut() {
     if (!app.supabase) return;
 
@@ -71,7 +77,10 @@ async function signOut() {
     }
 }
 
-// Event listener attachment
+/**
+ * Attach event listeners for specific view
+ * @param {string} viewName - Name of the view to attach listeners for
+ */
 function attachEventListeners(viewName) {
     const handlers = {
         'patientForm': attachPatientFormListeners
@@ -144,7 +153,10 @@ window.addEventListener('offline', () => {
     State.set('isOnline', false);
 });
 
-// Session management
+/**
+ * Initialize authentication system and restore user session
+ * @returns {Promise<void>}
+ */
 async function initializeAuth() {
     if (!app.supabase) return;
 
@@ -186,7 +198,11 @@ async function initializeAuth() {
     }
 }
 
-// Initialize app
+/**
+ * Initialize the entire application
+ * Sets up Supabase, authentication, router, and sync system
+ * @returns {Promise<void>}
+ */
 async function initializeApp() {
     console.log('Initializing Hospital Stats MVP...');
     
@@ -226,3 +242,22 @@ document.addEventListener('DOMContentLoaded', initializeApp);
 window.app = app;
 window.router = window.Router; // Use the Router module
 window.signOut = signOut;
+
+// Note: Global utility functions (showError, showMessage, showLoading) 
+// are now provided by the UIComponents module for consistency
+
+// Add a manual signout function accessible from console for testing
+window.manualSignOut = async function() {
+    console.log('Manual signout requested');
+    try {
+        if (window.Auth) {
+            await window.Auth.signOut();
+        } else {
+            await signOut();
+        }
+        alert('Signed out successfully! You can now test login/register forms.');
+    } catch (error) {
+        console.error('Manual signout error:', error);
+        alert('Signout error: ' + error.message);
+    }
+};

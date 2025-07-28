@@ -20,12 +20,26 @@
         // Subscribers for state changes
         subscribers: {},
         
-        // Get state value
+        /**
+         * Retrieves a value from the application state
+         * @param {string} key - The state key to retrieve
+         * @returns {*} The stored value, or undefined if key doesn't exist
+         * @example
+         * const user = State.get('user');
+         * const currentView = State.get('currentView');
+         */
         get(key) {
             return this.data[key];
         },
         
-        // Set state value and notify subscribers
+        /**
+         * Stores a value in the application state and notifies subscribers
+         * @param {string} key - The state key to store
+         * @param {*} value - The value to store
+         * @example
+         * State.set('user', userObject);
+         * State.set('currentView', 'dashboard');
+         */
         set(key, value) {
             const oldValue = this.data[key];
             this.data[key] = value;
