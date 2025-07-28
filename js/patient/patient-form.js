@@ -177,6 +177,9 @@
                 if (field && value !== null && value !== undefined) {
                     field.value = value;
                     console.log(`Set ${fieldId} to:`, value);
+                } else if (!field && fieldId.includes('-other')) {
+                    // Don't warn about missing conditional fields that may not be visible yet
+                    console.log(`Conditional field ${fieldId} not found (may not be visible yet)`);
                 } else if (!field) {
                     console.warn(`Field ${fieldId} not found`);
                 }
@@ -197,10 +200,8 @@
             setFieldValue('outcome', patient.outcome);
             setFieldValue('duration-minutes', patient.duration_minutes);
             
-            // Handle facility (may need to update options first)
-            if (patient.facility) {
-                setFieldValue('facility', patient.facility);
-            }
+            // Handle facility after updating facility type options
+            // We'll set this after updateConditionalFields() is called
             
             // Handle activities (checkboxes)
             if (patient.activities && Array.isArray(patient.activities)) {
@@ -214,34 +215,115 @@
             
             // Handle assistive devices (complex object)
             if (patient.assistive_devices) {
+                console.log('=== ASSISTIVE DEVICES DEBUG ===');
+                console.log('Assistive devices data:', patient.assistive_devices);
+                console.log('Device keys:', Object.keys(patient.assistive_devices));
+                
                 Object.keys(patient.assistive_devices).forEach(deviceType => {
                     const device = patient.assistive_devices[deviceType];
-                    if (device && device.used) {
-                        const checkbox = document.querySelector(`input[name="assistive-devices"][value="${deviceType}"]`);
+                    console.log(`Processing device: ${deviceType}`, device);
+                    
+                    // FIX: Check for 'issued' property instead of 'used'
+                    if (device && device.issued) {
+                        const checkbox = document.querySelector(`input[name="assistive_devices"][value="${deviceType}"]`);
+                        console.log(`Checkbox for ${deviceType}:`, checkbox);
+                        
                         if (checkbox) {
                             checkbox.checked = true;
+                            console.log(`Checked ${deviceType} checkbox`);
                             
-                            // Show details if available
-                            if (device.details) {
+                            // Trigger the visibility toggle for device details
+                            this.toggleDeviceDetails(deviceType);
+                            
+                            // Populate device details with small delay to ensure DOM is updated
+                            setTimeout(() => {
                                 const detailsField = document.getElementById(`${deviceType}-details`);
+                                console.log(`Details field for ${deviceType}:`, detailsField);
+                                
                                 if (detailsField) {
                                     detailsField.style.display = 'block';
                                     
-                                    Object.keys(device.details).forEach(detailKey => {
-                                        const detailField = document.getElementById(`${deviceType}-${detailKey}`);
-                                        if (detailField) {
-                                            detailField.value = device.details[detailKey];
+                                    // Populate funding source
+                                    if (device.funding_source) {
+                                        const fundingField = document.getElementById(`${deviceType}-funding`);
+                                        if (fundingField) {
+                                            fundingField.value = device.funding_source;
+                                            console.log(`Set ${deviceType} funding to:`, device.funding_source);
                                         }
-                                    });
+                                    }
+                                    
+                                    // Populate serial number (for wheelchairs)
+                                    if (device.serial_number) {
+                                        const serialField = document.getElementById(`${deviceType}-serial`);
+                                        if (serialField) {
+                                            serialField.value = device.serial_number;
+                                            console.log(`Set ${deviceType} serial to:`, device.serial_number);
+                                        }
+                                    }
+                                    
+                                    // Populate custom specification (for "other" devices)
+                                    if (device.specification) {
+                                        const specifyField = document.getElementById(`${deviceType}-specify`);
+                                        if (specifyField) {
+                                            specifyField.value = device.specification;
+                                            console.log(`Set ${deviceType} specification to:`, device.specification);
+                                        }
+                                    }
                                 }
-                            }
+                            }, 50);
                         }
                     }
                 });
+                console.log('=== END ASSISTIVE DEVICES DEBUG ===');
             }
             
-            // Trigger conditional field updates
+            // Trigger conditional field updates FIRST
             this.updateConditionalFields();
+            
+            // Set facility value after conditional fields are updated - with proper timing for PHC facilities
+            if (patient.facility) {
+                if (patient.facility_type === 'phc') {
+                    // For PHC facilities, wait for facility options to be populated
+                    const facilityOptionsHandler = (event) => {
+                        console.log('=== FACILITY OPTIONS READY EVENT ===');
+                        console.log('Event detail:', event.detail);
+                        
+                        setTimeout(() => {
+                            const facilitySelect = document.getElementById('facility');
+                            console.log('=== PHC FACILITY DEBUG ===');
+                            console.log('Facility value to set:', patient.facility);
+                            console.log('Facility select element:', facilitySelect);
+                            console.log('Available options:', Array.from(facilitySelect?.options || []).map(opt => opt.value));
+                            
+                            setFieldValue('facility', patient.facility);
+                            
+                            console.log('Facility value after setting:', facilitySelect?.value);
+                            console.log('=== END PHC FACILITY DEBUG ===');
+                        }, 50);
+                        
+                        // Remove the event listener after use
+                        document.removeEventListener('facilityOptionsReady', facilityOptionsHandler);
+                    };
+                    
+                    // Listen for facility options to be ready
+                    document.addEventListener('facilityOptionsReady', facilityOptionsHandler);
+                } else {
+                    // For non-PHC facilities, set immediately after conditional fields update
+                    setTimeout(() => {
+                        const facilitySelect = document.getElementById('facility');
+                        
+                        console.log('=== NON-PHC FACILITY DEBUG ===');
+                        console.log('Facility value to set:', patient.facility);
+                        console.log('Facility select element:', facilitySelect);
+                        console.log('Available options:', Array.from(facilitySelect?.options || []).map(opt => opt.value));
+                        
+                        setFieldValue('facility', patient.facility);
+                        
+                        console.log('Facility value after setting:', facilitySelect?.value);
+                        console.log('=== END NON-PHC FACILITY DEBUG ===');
+                    }, 100);
+                }
+            }
             
             console.log('Form population completed');
         },
@@ -250,20 +332,23 @@
         updateConditionalFields() {
             // Update facility options based on facility type
             const facilityType = document.getElementById('facility-type')?.value;
-            if (facilityType && window.updateFacilityOptions) {
-                window.updateFacilityOptions();
+            if (facilityType) {
+                const facilitySelect = document.getElementById('facility');
+                if (facilitySelect) {
+                    this.updateFacilityOptions(facilityType, facilitySelect);
+                }
             }
             
             // Show/hide referral source other field
             const referralSource = document.getElementById('referral-source')?.value;
-            if (referralSource === 'Other' && window.toggleReferralOther) {
-                window.toggleReferralOther();
+            if (referralSource === 'other') {
+                this.toggleReferralOther('other');
             }
             
             // Show/hide clinical area other field
             const clinicalArea = document.getElementById('clinical-area')?.value;
-            if (clinicalArea === 'Other' && window.toggleClinicalOther) {
-                window.toggleClinicalOther();
+            if (clinicalArea === 'Other (specify below)') {
+                this.toggleClinicalOther('Other (specify below)');
             }
         },
         
@@ -280,12 +365,14 @@
         
         // Get current form data
         getCurrentData() {
-            return {
+            const data = {
                 patientData: this.currentPatientData,
                 patientId: this.currentPatientId,
                 source: this.currentSource,
                 isEditing: this.isEditing
             };
+            console.log('PatientForm.getCurrentData():', data);
+            return data;
         },
         
         // Clear current data
@@ -335,12 +422,22 @@
                                         ${this.isEditing ? 'Editing existing record' : 'Creating new record'}
                                     </div>
                                     <div class="form-nav-actions">
-                                        <button type="button" class="btn btn-secondary" onclick="router.navigate('dashboard')">
+                                        <button type="button" class="btn btn-secondary" onclick="router.navigate('patients')">
                                             Cancel
                                         </button>
-                                        <button type="submit" class="btn btn-primary">
+                                        ${this.isEditing ? `
+                                        <button type="button" class="btn btn-danger" onclick="PatientCRUD.confirmDeletePatient()" style="margin-left: 8px;">
+                                            Delete
+                                        </button>
+                                        ` : ''}
+                                        <button type="submit" class="btn btn-primary" style="margin-left: 8px;">
                                             ${submitText}
                                         </button>
+                                        ${this.isEditing ? `
+                                        <button type="button" class="btn btn-info" onclick="PatientForm.debugCurrentState()" style="margin-left: 8px; background: #17a2b8;">
+                                            Debug
+                                        </button>
+                                        ` : ''}
                                     </div>
                                 </div>
                             </div>
@@ -520,7 +617,7 @@
                             <div class="device-details" id="${device.value}-details" style="display: none; margin-left: 20px; margin-top: 10px;">
                                 <div class="form-group">
                                     <label class="form-label">Funding Source</label>
-                                    <select name="${device.value}_funding" class="form-input">
+                                    <select id="${device.value}-funding" name="${device.value}_funding" class="form-input">
                                         <option value="">Select funding source</option>
                                         ${device.fundingSources.map(source => 
                                             `<option value="${source.value}">${source.label}</option>`
@@ -531,14 +628,14 @@
                                 ${device.requiresSerialNumber ? `
                                     <div class="form-group">
                                         <label class="form-label">Serial Number *</label>
-                                        <input type="text" name="${device.value}_serial" class="form-input" placeholder="Enter wheelchair serial number">
+                                        <input type="text" id="${device.value}-serial" name="${device.value}_serial" class="form-input" placeholder="Enter wheelchair serial number">
                                     </div>
                                 ` : ''}
                                 
                                 ${device.allowCustomInput ? `
                                     <div class="form-group">
                                         <label class="form-label">Specify Device</label>
-                                        <input type="text" name="${device.value}_specify" class="form-input" placeholder="Describe the assistive device">
+                                        <input type="text" id="${device.value}-specify" name="${device.value}_specify" class="form-input" placeholder="Describe the assistive device">
                                     </div>
                                 ` : ''}
                             </div>
@@ -652,6 +749,22 @@
             }
         },
 
+        // Debug current state (for testing)
+        debugCurrentState() {
+            console.log('=== PATIENT FORM DEBUG STATE ===');
+            console.log('Current Patient Data:', this.currentPatientData);
+            console.log('Current Patient ID:', this.currentPatientId);
+            console.log('Current Source:', this.currentSource);
+            console.log('Is Editing:', this.isEditing);
+            console.log('getCurrentData():', this.getCurrentData());
+            
+            // Test form data collection
+            const formData = PatientCRUD.collectFormData();
+            console.log('Current Form Data:', formData);
+            
+            alert('Debug info logged to console. Check browser console for details.');
+        },
+
         // Update facility options based on facility type
         updateFacilityOptions(facilityType, facilitySelect) {
             const facilityContainer = document.getElementById('facility-container');
@@ -660,6 +773,9 @@
                 // Show facility container only for PHC
                 facilityContainer.style.display = 'block';
                 facilitySelect.required = true;
+                
+                // Get current facility value to preserve it
+                const currentFacilityValue = facilitySelect.value;
                 
                 // Get user's sub-district from user profile
                 this.getUserProfile().then(userProfile => {
@@ -674,31 +790,70 @@
                             option.textContent = facility;
                             facilitySelect.appendChild(option);
                         });
+                        
+                        // Restore the previous value if it exists in the options
+                        if (currentFacilityValue && facilities.includes(currentFacilityValue)) {
+                            facilitySelect.value = currentFacilityValue;
+                            console.log('Restored PHC facility value:', currentFacilityValue);
+                        }
+                        
+                        // Also check for patient data facility during initial population
+                        if (this.currentPatientData && this.currentPatientData.facility && facilities.includes(this.currentPatientData.facility)) {
+                            facilitySelect.value = this.currentPatientData.facility;
+                            console.log('Set facility from patient data:', this.currentPatientData.facility);
+                        }
+                        
+                        // Trigger a custom event when facility options are ready
+                        const event = new CustomEvent('facilityOptionsReady', { 
+                            detail: { facilityType, currentValue: currentFacilityValue, restored: facilities.includes(currentFacilityValue) }
+                        });
+                        document.dispatchEvent(event);
                     } else {
+                        // No user profile found - make field optional and show error
+                        console.warn('No user profile found for PHC facility selection');
                         facilitySelect.innerHTML = '<option value="">No sub-district found</option>';
+                        // CRITICAL FIX: Make field not required when no profile found
+                        facilitySelect.required = false;
+                        facilityContainer.style.display = 'block'; // Still show it but make it optional
                     }
                 }).catch(error => {
                     console.error('Error getting user profile:', error);
                     facilitySelect.innerHTML = '<option value="">Error loading facilities</option>';
+                    // CRITICAL FIX: Make field not required when profile fails to load
+                    facilitySelect.required = false;
+                    facilityContainer.style.display = 'block'; // Still show it but make it optional
                 });
             } else {
                 // Hide facility container for non-PHC types, but set a default value
                 facilityContainer.style.display = 'none';
                 facilitySelect.required = false;
                 
+                // Clear existing options first
+                facilitySelect.innerHTML = '<option value="">Select facility</option>';
+                
                 // Set facility value based on facility type for database requirements
+                let facilityValue = '';
                 switch(facilityType) {
                     case 'in-hospital':
-                        facilitySelect.value = 'In-hospital';
+                        facilityValue = 'In-hospital';
                         break;
                     case 'out-hospital':
-                        facilitySelect.value = 'Out-hospital';
+                        facilityValue = 'Out-hospital';
                         break;
                     case 'icf':
-                        facilitySelect.value = 'Intermediate Care Facility';
+                        facilityValue = 'Intermediate Care Facility';
                         break;
                     default:
-                        facilitySelect.value = '';
+                        facilityValue = '';
+                }
+                
+                if (facilityValue) {
+                    // Add the option and select it
+                    const option = document.createElement('option');
+                    option.value = facilityValue;
+                    option.textContent = facilityValue;
+                    facilitySelect.appendChild(option);
+                    facilitySelect.value = facilityValue;
                 }
             }
         }
