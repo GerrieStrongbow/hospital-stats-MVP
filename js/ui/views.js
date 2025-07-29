@@ -221,6 +221,14 @@
                     </div>
 
                     <div class="card mb-3">
+                        <h3>Data Aggregation</h3>
+                        <p class="text-secondary">Generate monthly reports and statistics</p>
+                        <button class="btn btn-primary btn-block mt-3" onclick="Views.runAggregation()" ${!app.isOnline ? 'disabled title="Requires internet connection"' : ''}>
+                            📊 Generate Monthly Reports
+                        </button>
+                    </div>
+
+                    <div class="card mb-3">
                         <h3>Overview</h3>
                         <div style="display: flex; justify-content: space-between; align-items: center; margin: 16px 0;">
                             <span>Total Synced Patient Records:</span>
@@ -577,6 +585,32 @@
                 
             } catch (error) {
                 console.error('Failed to delete from localStorage:', error);
+            }
+        },
+
+        // Run data aggregation
+        async runAggregation() {
+            try {
+                console.log('Running manual aggregation...');
+                this.showLoading(true);
+                
+                if (!window.Aggregation) {
+                    throw new Error('Aggregation module not available');
+                }
+                
+                const result = await window.Aggregation.manualAggregation();
+                
+                if (result.success) {
+                    this.showMessage(`Aggregation completed successfully! Processed ${result.aggregatedMonths} months with ${result.backendRecords} backend records and ${result.bookedNumbersRecords} booking records.`);
+                } else {
+                    throw new Error(result.message);
+                }
+                
+            } catch (error) {
+                console.error('Aggregation failed:', error);
+                this.showError('Failed to run aggregation: ' + error.message);
+            } finally {
+                this.showLoading(false);
             }
         }
     };

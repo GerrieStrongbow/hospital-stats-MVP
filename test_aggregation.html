@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Stats MVP - Aggregation Testing</title>
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .success {
+            background: #e8f5e8;
+            border-color: #4CAF50;
+        }
+        .error {
+            background: #ffeaea;
+            border-color: #f44336;
+        }
+        .warning {
+            background: #fff8e1;
+            border-color: #ff9800;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+        .button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #1976D2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Hospital Stats MVP - Aggregation Logic Testing</h1>
+        
+        <div class="test-section">
+            <h3>Testing Overview</h3>
+            <p>This test validates the aggregation logic against the examples provided in REQUIREMENTS.md</p>
+            <button class="button" onclick="runAllTests()">Run All Tests</button>
+            <button class="button" onclick="testClassification()">Test Classification Logic</button>
+            <button class="button" onclick="testAttendanceCategories()">Test Attendance Categories</button>
+            <button class="button" onclick="testAggregation()">Test Full Aggregation</button>
+        </div>
+
+        <div id="test-results">
+            <!-- Test results will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Load application modules for testing -->
+    <script src="js/utils/constants.js"></script>
+    <script src="js/utils/state.js"></script>
+    <script src="js/sync/aggregation.js"></script>
+
+    <script>
+        // Test data based on REQUIREMENTS.md examples
+        const testUserProfile = {
+            first_name: 'A.',
+            last_name: 'BEKKER',
+            therapist_type: 'Occupational Therapist',
+            sub_district: 'Stellenbosch'
+        };
+
+        const testPatientRecords = [
+            // Records that should create the backend aggregation examples
+            {
+                patient_identifier: 'TEST001',
+                age_group: '<18',
+                facility: 'Cloetesville CDC',
+                facility_type: 'phc',
+                appointment_date: '2025-05-15',
+                appointment_type: 'repeat',
+                referral_source: 'phc',
+                attendance: 'Attended',
+                assistive_devices: {} // No devices = Tx
+            },
+            {
+                patient_identifier: 'TEST002',
+                age_group: '<18',
+                facility: 'Cloetesville CDC',
+                facility_type: 'phc',
+                appointment_date: '2025-05-16',
+                appointment_type: 'repeat',
+                referral_source: 'phc',
+                attendance: 'Attended',
+                assistive_devices: {} // No devices = Tx
+            },
+            {
+                patient_identifier: 'TEST003',
+                age_group: '<18',
+                facility: 'Klapmuts Clinic',
+                facility_type: 'phc',
+                appointment_date: '2025-05-17',
+                appointment_type: 'new',
+                referral_source: 'phc',
+                attendance: 'Attended',
+                assistive_devices: {} // No devices = Tx
+            },
+            {
+                patient_identifier: 'TEST004',
+                age_group: '>18',
+                facility: 'Stellenbosch Provincial Hospital',
+                facility_type: 'out-hospital',
+                appointment_date: '2025-05-18',
+                appointment_type: 'new',
+                referral_source: 'hospital',
+                attendance: 'Attended',
+                assistive_devices: {
+                    wheelchair: { used: true, details: { funding_source: 'new' } }
+                } // Has device = Tx+D
+            },
+            {
+                patient_identifier: 'TEST005',
+                age_group: '>18',
+                facility: 'Stellenbosch Provincial Hospital',
+                facility_type: 'in-hospital',
+                appointment_date: '2025-05-19',
+                appointment_type: 'new',
+                referral_source: 'hospital',
+                attendance: 'Attended Without Appointment (Walk-in)',
+                assistive_devices: {} // No devices = Tx
+            }
+        ];
+
+        // Expected results based on REQUIREMENTS.md examples
+        const expectedBackendResults = [
+            {
+                facility: 'Cloetesville CDC',
+                type_of_patients: 'Repeat',
+                referred_from: 'PHC', // Changed from 'Repeat' to 'PHC'
+                age_or_repeat: 'Repeat',
+                tx_or_tx_d: 'Tx',
+                totals: 2
+            },
+            {
+                facility: 'Klapmuts Clinic',
+                type_of_patients: 'New',
+                referred_from: 'PHC',
+                age_or_repeat: '<18',
+                tx_or_tx_d: 'Tx',
+                totals: 1
+            },
+            {
+                facility: 'Stellenbosch Provincial Hospital (out-patient)',
+                type_of_patients: 'New',
+                referred_from: 'Hosp',
+                age_or_repeat: '>18',
+                tx_or_tx_d: 'Tx+D',
+                totals: 1
+            },
+            {
+                facility: 'Stellenbosch Provincial Hospital (in-patient)',
+                type_of_patients: 'New',
+                referred_from: 'Hosp',
+                age_or_repeat: '>18',
+                tx_or_tx_d: 'Tx',
+                totals: 1
+            }
+        ];
+
+        const expectedBookedResults = [
+            {
+                facility: 'Cloetesville CDC',
+                total_booked: 2,
+                booked_seen: 2,
+                unbooked_seen: 0
+            },
+            {
+                facility: 'Klapmuts Clinic',
+                total_booked: 1,
+                booked_seen: 1,
+                unbooked_seen: 0
+            },
+            {
+                facility: 'Stellenbosch Provincial Hospital (out-patient)',
+                total_booked: 1,
+                booked_seen: 1,
+                unbooked_seen: 0
+            },
+            {
+                facility: 'Stellenbosch Provincial Hospital (in-patient)',
+                total_booked: 0,
+                booked_seen: 0,
+                unbooked_seen: 1 // Walk-in
+            }
+        ];
+
+        function displayResults(title, content, status = 'info') {
+            const resultsDiv = document.getElementById('test-results');
+            const sectionDiv = document.createElement('div');
+            sectionDiv.className = `test-section ${status}`;
+            sectionDiv.innerHTML = `
+                <h3>${title}</h3>
+                <div>${content}</div>
+            `;
+            resultsDiv.appendChild(sectionDiv);
+        }
+
+        function runAllTests() {
+            document.getElementById('test-results').innerHTML = '';
+            displayResults('Starting Tests', 'Running comprehensive aggregation tests...');
+            
+            testClassification();
+            testAttendanceCategories();
+            testAggregation();
+        }
+
+        function testClassification() {
+            try {
+                displayResults('Classification Test', 'Testing record classification logic...');
+                
+                const aggregation = window.Aggregation;
+                if (!aggregation) {
+                    throw new Error('Aggregation module not loaded');
+                }
+
+                let results = [];
+                
+                testPatientRecords.forEach((record, index) => {
+                    const classification = aggregation.classifyRecord(record);
+                    results.push(`
+                        <p><strong>Record ${index + 1} (${record.patient_identifier}):</strong></p>
+                        <ul>
+                            <li>Facility: ${classification.facility}</li>
+                            <li>Type of Patients: ${classification.type_of_patients}</li>
+                            <li>Referred From: ${classification.referred_from}</li>
+                            <li>Age or Repeat: ${classification.age_or_repeat}</li>
+                            <li>Tx or Tx+D: ${classification.tx_or_tx_d}</li>
+                        </ul>
+                    `);
+                });
+
+                displayResults('Classification Results', results.join(''), 'success');
+
+            } catch (error) {
+                displayResults('Classification Test Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function testAttendanceCategories() {
+            try {
+                displayResults('Attendance Categories Test', 'Testing attendance categorization...');
+                
+                const aggregation = window.Aggregation;
+                const attendanceTypes = [
+                    'Attended',
+                    'Attended Not Treated',
+                    'Cancelled On Day',
+                    'Rescheduled',
+                    'Attended Without Appointment (Walk-in)',
+                    'Did Not Attend (DNA)'
+                ];
+
+                let results = [];
+                attendanceTypes.forEach(attendance => {
+                    const category = aggregation.categorizeAttendance(attendance);
+                    results.push(`<li><strong>${attendance}</strong> → ${category}</li>`);
+                });
+
+                displayResults('Attendance Categories', `<ul>${results.join('')}</ul>`, 'success');
+
+            } catch (error) {
+                displayResults('Attendance Test Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function testAggregation() {
+            try {
+                displayResults('Full Aggregation Test', 'Testing complete aggregation process...');
+                
+                const aggregation = window.Aggregation;
+                
+                // Test backend aggregation
+                const backendData = aggregation.generateBackendAggregation(
+                    testPatientRecords, 
+                    testUserProfile, 
+                    'May', 
+                    'Yr 2025'
+                );
+
+                let backendTable = `
+                    <h4>Backend Aggregation Results:</h4>
+                    <table>
+                        <tr>
+                            <th>Facility</th>
+                            <th>Type of Patients</th>
+                            <th>Referred From</th>
+                            <th>Age or Repeat</th>
+                            <th>Tx or Tx+D</th>
+                            <th>Totals</th>
+                        </tr>
+                `;
+
+                backendData.forEach(record => {
+                    backendTable += `
+                        <tr>
+                            <td>${record.facility}</td>
+                            <td>${record.type_of_patients}</td>
+                            <td>${record.referred_from}</td>
+                            <td>${record.age_or_repeat}</td>
+                            <td>${record.tx_or_tx_d}</td>
+                            <td>${record.totals}</td>
+                        </tr>
+                    `;
+                });
+                backendTable += '</table>';
+
+                // Test booked numbers
+                const bookedData = aggregation.generateBookedNumbers(
+                    testPatientRecords, 
+                    testUserProfile, 
+                    'May', 
+                    'Yr 2025'
+                );
+
+                let bookedTable = `
+                    <h4>Booked Numbers Results:</h4>
+                    <table>
+                        <tr>
+                            <th>Facility</th>
+                            <th>Total Booked</th>
+                            <th>Booked Seen</th>
+                            <th>Unbooked Seen</th>
+                        </tr>
+                `;
+
+                bookedData.forEach(record => {
+                    bookedTable += `
+                        <tr>
+                            <td>${record.facility}</td>
+                            <td>${record.total_booked}</td>
+                            <td>${record.booked_seen}</td>
+                            <td>${record.unbooked_seen}</td>
+                        </tr>
+                    `;
+                });
+                bookedTable += '</table>';
+
+                displayResults('Aggregation Results', backendTable + bookedTable, 'success');
+
+                // Validate against expected results
+                validateResults(backendData, bookedData);
+
+            } catch (error) {
+                displayResults('Aggregation Test Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        function validateResults(backendData, bookedData) {
+            try {
+                let validationMessages = [];
+                
+                // Validate backend results
+                expectedBackendResults.forEach(expected => {
+                    const actual = backendData.find(record => 
+                        record.facility === expected.facility &&
+                        record.type_of_patients === expected.type_of_patients &&
+                        record.referred_from === expected.referred_from &&
+                        record.age_or_repeat === expected.age_or_repeat &&
+                        record.tx_or_tx_d === expected.tx_or_tx_d
+                    );
+
+                    if (actual) {
+                        if (actual.totals === expected.totals) {
+                            validationMessages.push(`✅ Backend: ${expected.facility} - ${expected.type_of_patients} - ${expected.referred_from} - ${expected.age_or_repeat} - ${expected.tx_or_tx_d}: ${actual.totals} (PASS)`);
+                        } else {
+                            validationMessages.push(`❌ Backend: ${expected.facility} - Expected ${expected.totals}, got ${actual.totals} (FAIL)`);
+                        }
+                    } else {
+                        validationMessages.push(`❌ Backend: Missing record for ${expected.facility} - ${expected.type_of_patients} (FAIL)`);
+                    }
+                });
+
+                // Validate booked results
+                expectedBookedResults.forEach(expected => {
+                    const actual = bookedData.find(record => record.facility === expected.facility);
+
+                    if (actual) {
+                        const totalBookedMatch = actual.total_booked === expected.total_booked;
+                        const bookedSeenMatch = actual.booked_seen === expected.booked_seen;
+                        const unbookedSeenMatch = actual.unbooked_seen === expected.unbooked_seen;
+
+                        if (totalBookedMatch && bookedSeenMatch && unbookedSeenMatch) {
+                            validationMessages.push(`✅ Booked: ${expected.facility} - All numbers match (PASS)`);
+                        } else {
+                            validationMessages.push(`❌ Booked: ${expected.facility} - Expected (${expected.total_booked}/${expected.booked_seen}/${expected.unbooked_seen}), got (${actual.total_booked}/${actual.booked_seen}/${actual.unbooked_seen}) (FAIL)`);
+                        }
+                    } else {
+                        validationMessages.push(`❌ Booked: Missing record for ${expected.facility} (FAIL)`);
+                    }
+                });
+
+                const allPassed = validationMessages.every(msg => msg.includes('✅'));
+                displayResults(
+                    'Validation Results', 
+                    `<ul><li>${validationMessages.join('</li><li>')}</li></ul>`,
+                    allPassed ? 'success' : 'error'
+                );
+
+            } catch (error) {
+                displayResults('Validation Failed', `Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-run basic tests on load
+        window.addEventListener('load', () => {
+            displayResults('Test Environment', 'Aggregation testing environment loaded. Click buttons above to run tests.');
+        });
+    </script>
+</body>
+</html>

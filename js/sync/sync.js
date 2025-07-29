@@ -144,6 +144,12 @@
                 
                 console.log(`Sync completed: ${results.syncedCount} synced, ${results.failedCount} failed`);
                 
+                // Trigger aggregation if sync was successful
+                if (results.syncedCount > 0 && window.Aggregation) {
+                    console.log('Triggering aggregation after successful sync...');
+                    window.Aggregation.triggerAggregationAfterSync(user.id);
+                }
+                
                 return {
                     success: true,
                     message: `Synced ${results.syncedCount} records${results.failedCount > 0 ? `, ${results.failedCount} failed` : ''}`,
