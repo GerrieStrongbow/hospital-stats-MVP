@@ -8,6 +8,47 @@
     padding: var(--spacing-lg);
 }
 
+.container .card {
+    padding: var(--spacing-xl);
+    margin-bottom: var(--spacing-lg);
+}
+
+/* Fix spacing for sync status bar */
+.container .sync-status {
+    margin-bottom: var(--spacing-xl);
+}
+
+/* Ensure first card has extra top margin after sync bar */
+.container .card:first-of-type {
+    margin-top: var(--spacing-lg);
+}
+
+.container .card h3 {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.4;
+}
+
+.container .card p {
+    margin-bottom: var(--spacing-md);
+    line-height: 1.5;
+}
+
+/* Improve text spacing in dashboard stats */
+.container .card div {
+    margin-bottom: var(--spacing-sm);
+    line-height: 1.4;
+}
+
+.container .card span {
+    padding: var(--spacing-xs) 0;
+    display: inline-block;
+}
+
+/* Add better spacing for overview section */
+.container .card strong {
+    padding-left: var(--spacing-sm);
+}
+
 .dashboard-header {
     margin-bottom: var(--spacing-xl);
 }

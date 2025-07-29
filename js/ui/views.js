@@ -379,20 +379,18 @@
             const recordId = record.id || record.local_id;
             
             return `
-                <div class="list-item">
-                    <div class="patient-header" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')" style="cursor: pointer; flex: 1;">
-                        <div>
+                <div class="patient-list-item" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')" style="cursor: pointer;">
+                    <div class="patient-header">
+                        <div class="patient-info">
                             <h4>${record.patient_identifier || 'Unknown Patient'}</h4>
-                            <p class="text-secondary">${record.facility || 'Unknown Facility'}</p>
+                            <p class="text-secondary">${record.facility || 'Unknown Facility'} • ${record.appointment_type || 'Unknown Type'}</p>
+                            <p class="text-secondary">${dateString}</p>
                         </div>
                         <span class="sync-status ${syncStatusClass}">${syncIcon} ${syncStatusText}</span>
                     </div>
-                    <p class="text-secondary" onclick="PatientCRUD.viewPatient('${record.patient_identifier}', '${record.source}')" style="cursor: pointer; flex: 1;">${dateString}</p>
-                    <div class="list-item-actions">
-                        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); Views.quickDeletePatient('${recordId}', '${record.source}', '${record.patient_identifier}')" title="Delete patient record" style="padding: 8px; min-width: auto;">
-                            🗑️
-                        </button>
-                    </div>
+                    <button class="delete-btn" onclick="event.stopPropagation(); Views.quickDeletePatient('${recordId}', '${record.source}', '${record.patient_identifier}')" title="Delete patient record">
+                        🗑️
+                    </button>
                 </div>
             `;
         },

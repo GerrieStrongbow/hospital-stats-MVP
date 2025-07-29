@@ -133,13 +133,23 @@
 
 /* Patient list specific */
 .patient-list-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
     padding: var(--spacing-lg);
+    padding-right: 60px; /* Space for delete button */
     background-color: var(--surface-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-1);
     margin-bottom: var(--spacing-md);
     cursor: pointer;
     transition: all var(--transition-fast);
+}
+
+/* Add spacing for patient list container */
+#patient-list {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing-md);
 }
 
 .patient-list-item:hover {
@@ -328,63 +338,91 @@
     color: var(--warning-color);
 }
 
-/* List item layout with delete button */
-.list-item {
+/* Patient list item layout fixes - merged with main selector above */
+
+.patient-list-item .patient-header {
     display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    position: relative;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--spacing-sm);
+    width: 100%;
 }
 
-.list-item .list-item-actions {
+.patient-list-item .patient-info {
+    flex: 1;
+    min-width: 0; /* Allow text truncation */
+}
+
+.patient-list-item .sync-status {
+    margin-left: var(--spacing-md);
+    flex-shrink: 0;
+}
+
+/* Delete button positioning and styling */
+.patient-list-item .delete-btn {
     position: absolute;
     top: var(--spacing-md);
     right: var(--spacing-md);
-    z-index: 2;
-}
-
-.list-item .btn-sm {
-    padding: var(--spacing-xs);
-    min-width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    background-color: transparent;
+    color: #999; /* Light gray default */
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    z-index: 3;
+    opacity: 0.7;
 }
 
-.list-item .btn-danger {
-    background-color: var(--error-color);
-    border: none;
-    color: white;
-    transition: all var(--transition-fast);
+.patient-list-item .delete-btn:hover {
+    background-color: rgba(244, 67, 54, 0.1);
+    color: #f44336; /* Red on hover */
+    transform: scale(1.1);
+    opacity: 1;
+    box-shadow: 0 2px 8px rgba(244, 67, 54, 0.2);
 }
 
-.list-item .btn-danger:hover {
-    background-color: #c62828;
-    transform: scale(1.05);
-}
-
-.list-item .btn-danger:active {
+.patient-list-item .delete-btn:active {
     transform: scale(0.95);
+    background-color: rgba(244, 67, 54, 0.2);
 }
 
-/* Ensure patient content doesn't overlap with delete button */
-.list-item .patient-header,
-.list-item .text-secondary {
-    margin-right: 50px; /* Space for delete button */
+/* Prevent text overflow */
+.patient-list-item h4,
+.patient-list-item .text-secondary {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    margin-right: 0;
 }
 
 @media (max-width: 576px) {
-    .list-item .patient-header,
-    .list-item .text-secondary {
-        margin-right: 45px; /* Smaller space on mobile */
+    .patient-list-item {
+        padding: var(--spacing-md);
+        padding-right: 50px; /* Smaller space for delete button on mobile */
     }
     
-    .list-item .btn-sm {
-        min-width: 28px;
-        height: 28px;
-        font-size: 12px;
+    .patient-list-item .delete-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+        top: var(--spacing-sm);
+        right: var(--spacing-sm);
+    }
+    
+    .patient-list-item .patient-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-xs);
+    }
+    
+    .patient-list-item .sync-status {
+        margin-left: 0;
+        align-self: flex-start;
     }
 }

@@ -10,7 +10,15 @@
     position: sticky;
     top: 0;
     z-index: var(--z-sticky);
-    padding: 0 var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+}
+
+.header-title {
+    margin: 0;
+    padding: var(--spacing-sm) 0;
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
+    color: var(--text-primary);
 }
 
 .header-content {
