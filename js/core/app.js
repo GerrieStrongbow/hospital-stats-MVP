@@ -42,19 +42,47 @@
             console.log('Initializing Supabase...');
             
             if (!window.APP_CONFIG) {
-                throw new Error('APP_CONFIG not found. Please check config.js');
+                console.error('APP_CONFIG not found. Please check config.js');
+                return false;
             }
-            
-            const { createClient } = supabase;
-            this.supabase = createClient(
-                window.APP_CONFIG.SUPABASE_URL,
-                window.APP_CONFIG.SUPABASE_ANON_KEY
-            );
-            
-            // Store in global state for modules to access
-            State.set('supabase', this.supabase);
-            
-            console.log('Supabase client initialized');
+
+            const config = window.APP_CONFIG;
+
+            // Check if we have credentials
+            if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+                console.warn('Supabase credentials not configured. Running in demo mode.');
+                console.log('Config values:', {
+                    hasUrl: !!config.SUPABASE_URL,
+                    hasKey: !!config.SUPABASE_ANON_KEY,
+                    keyLength: config.SUPABASE_ANON_KEY?.length || 0
+                });
+                return false;
+            }
+
+            try {
+                if (typeof supabase === 'undefined') {
+                    console.error('Supabase library not loaded');
+                    return false;
+                }
+                
+                const { createClient } = supabase;
+                this.supabase = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+                
+                // Store in global state for modules to access
+                State.set('supabase', this.supabase);
+                
+                // Also set in legacy global app object for compatibility
+                if (window.app) {
+                    window.app.supabase = this.supabase;
+                }
+                
+                console.log('Supabase client initialized');
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize Supabase:', error);
+                this.showError('Failed to connect to database.');
+                return false;
+            }
         },
         
         // Initialize core modules
