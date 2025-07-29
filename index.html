@@ -22,12 +22,12 @@
     <!-- Custom Styles - Modular CSS -->
     <link rel="stylesheet" href="css/main.css">
 
-    <!-- Supabase -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
-
-    <!-- App Configuration -->
+    <!-- App Configuration (load first, no defer) -->
     <script src="config.js"></script>
     <script src="build-config.js"></script>
+
+    <!-- Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
 <body>
     <!-- Main App Container -->
