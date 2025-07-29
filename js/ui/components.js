@@ -245,35 +245,257 @@
         /**
          * Show/hide loading overlay
          */
-        showLoading(show) {
-            const loadingOverlay = document.getElementById('loading-overlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = show ? 'flex' : 'none';
+        showLoading(show, message = 'Loading...') {
+            let loadingOverlay = document.getElementById('loading-overlay');
+            
+            // Create loading overlay if it doesn't exist
+            if (!loadingOverlay) {
+                loadingOverlay = this.createLoadingOverlay();
             }
+            
+            const loadingText = loadingOverlay.querySelector('.loading-text');
+            if (loadingText) {
+                loadingText.textContent = message;
+            }
+            
+            loadingOverlay.style.display = show ? 'flex' : 'none';
+        },
+
+        /**
+         * Create loading overlay element
+         */
+        createLoadingOverlay() {
+            const overlay = document.createElement('div');
+            overlay.id = 'loading-overlay';
+            overlay.innerHTML = `
+                <div class="loading-content">
+                    <div class="loading-spinner"></div>
+                    <div class="loading-text">Loading...</div>
+                </div>
+            `;
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            `;
+            
+            const style = document.createElement('style');
+            style.textContent = `
+                .loading-content {
+                    background: white;
+                    padding: 32px;
+                    border-radius: 8px;
+                    text-align: center;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                    max-width: 300px;
+                    width: 90%;
+                }
+                
+                .loading-spinner {
+                    width: 32px;
+                    height: 32px;
+                    border: 3px solid #f3f3f3;
+                    border-top: 3px solid #4285f4;
+                    border-radius: 50%;
+                    animation: spin 1s linear infinite;
+                    margin: 0 auto 16px;
+                }
+                
+                @keyframes spin {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
+                
+                .loading-text {
+                    color: #333;
+                    font-size: 16px;
+                    font-weight: 500;
+                }
+            `;
+            
+            document.head.appendChild(style);
+            document.body.appendChild(overlay);
+            return overlay;
         },
 
         /**
          * Show error message to user
          */
-        showError(message) {
-            console.error('Error:', message);
-            alert(message); // TODO: Replace with better UI notification
+        showError(message, duration = 5000) {
+            this.showNotification(message, 'error', duration);
         },
 
         /**
          * Show success message to user
          */
-        showMessage(message, type = 'info') {
-            console.log(`${type}:`, message);
-            
-            // For now, use alert - should be replaced with proper notification system
-            if (type === 'success') {
-                alert(`✓ ${message}`);
-            } else if (type === 'warning') {
-                alert(`⚠ ${message}`);
-            } else {
-                alert(message);
+        showMessage(message, type = 'info', duration = 3000) {
+            this.showNotification(message, type, duration);
+        },
+
+        /**
+         * Enhanced notification system
+         */
+        showNotification(message, type = 'info', duration = 3000) {
+            // Create notification container if it doesn't exist
+            let container = document.getElementById('notification-container');
+            if (!container) {
+                container = this.createNotificationContainer();
             }
+
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            
+            const icons = {
+                success: '✓',
+                error: '✗', 
+                warning: '⚠',
+                info: 'ℹ'
+            };
+            
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <span class="notification-icon">${icons[type] || icons.info}</span>
+                    <span class="notification-message">${message}</span>
+                    <button class="notification-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
+
+            container.appendChild(notification);
+
+            // Auto-remove after duration
+            setTimeout(() => {
+                if (notification.parentElement) {
+                    notification.style.opacity = '0';
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }
+            }, duration);
+        },
+
+        /**
+         * Create notification container
+         */
+        createNotificationContainer() {
+            const container = document.createElement('div');
+            container.id = 'notification-container';
+            container.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 10000;
+                max-width: 400px;
+                width: 90%;
+            `;
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .notification {
+                    background: white;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    margin-bottom: 12px;
+                    overflow: hidden;
+                    transition: all 0.3s ease;
+                    border-left: 4px solid #ddd;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                }
+                
+                .notification-success {
+                    border-left-color: #28a745;
+                }
+                
+                .notification-error {
+                    border-left-color: #dc3545;
+                }
+                
+                .notification-warning {
+                    border-left-color: #ffc107;
+                }
+                
+                .notification-info {
+                    border-left-color: #17a2b8;
+                }
+                
+                .notification-content {
+                    display: flex;
+                    align-items: center;
+                    padding: 16px;
+                    gap: 12px;
+                }
+                
+                .notification-icon {
+                    font-size: 18px;
+                    font-weight: bold;
+                    flex-shrink: 0;
+                }
+                
+                .notification-success .notification-icon {
+                    color: #28a745;
+                }
+                
+                .notification-error .notification-icon {
+                    color: #dc3545;
+                }
+                
+                .notification-warning .notification-icon {
+                    color: #ffc107;
+                }
+                
+                .notification-info .notification-icon {
+                    color: #17a2b8;
+                }
+                
+                .notification-message {
+                    flex: 1;
+                    color: #333;
+                    font-size: 14px;
+                    line-height: 1.4;
+                }
+                
+                .notification-close {
+                    background: none;
+                    border: none;
+                    font-size: 18px;
+                    color: #999;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 24px;
+                    height: 24px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border-radius: 50%;
+                    transition: background-color 0.2s;
+                }
+                
+                .notification-close:hover {
+                    background-color: #f8f9fa;
+                    color: #666;
+                }
+                
+                @media (max-width: 768px) {
+                    #notification-container {
+                        top: 10px;
+                        right: 10px;
+                        left: 10px;
+                        width: auto;
+                        max-width: none;
+                    }
+                }
+            `;
+
+            document.head.appendChild(style);
+            document.body.appendChild(container);
+            return container;
         },
 
         /**
