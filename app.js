@@ -15,16 +15,22 @@ const app = {
  * @returns {Promise<boolean>} True if initialization successful, false otherwise
  */
 async function initSupabase() {
-    // For MVP, we'll use a config object that can be easily changed
-    // In production, this would be injected during build time
-    const config = window.APP_CONFIG || {
-        SUPABASE_URL: 'https://qnipfhctucuvqbpazmbh.supabase.co',
-        SUPABASE_ANON_KEY: '' // Will be set in config.js
-    };
+    // Check if configuration is loaded
+    if (!window.APP_CONFIG) {
+        console.error('APP_CONFIG not found. Please check config.js');
+        return false;
+    }
+
+    const config = window.APP_CONFIG;
 
     // Check if we have credentials
     if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
         console.warn('Supabase credentials not configured. Running in demo mode.');
+        console.log('Config values:', {
+            hasUrl: !!config.SUPABASE_URL,
+            hasKey: !!config.SUPABASE_ANON_KEY,
+            keyLength: config.SUPABASE_ANON_KEY?.length || 0
+        });
         return false;
     }
 

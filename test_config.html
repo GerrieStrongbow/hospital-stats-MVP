@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Config Test</title>
+    <script src="config.js"></script>
+</head>
+<body>
+    <h1>Configuration Test</h1>
+    <div id="results"></div>
+    
+    <script>
+        document.getElementById('results').innerHTML = `
+            <p><strong>window.APP_CONFIG exists:</strong> ${!!window.APP_CONFIG}</p>
+            <p><strong>SUPABASE_URL:</strong> ${window.APP_CONFIG?.SUPABASE_URL || 'NOT FOUND'}</p>
+            <p><strong>SUPABASE_ANON_KEY exists:</strong> ${!!window.APP_CONFIG?.SUPABASE_ANON_KEY}</p>
+            <p><strong>Key length:</strong> ${window.APP_CONFIG?.SUPABASE_ANON_KEY?.length || 0}</p>
+        `;
+    </script>
+</body>
+</html>
