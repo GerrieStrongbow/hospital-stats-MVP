@@ -6,7 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#1976d2">
+    <meta name="msapplication-TileColor" content="#1976d2">
+    <meta name="application-name" content="Hospital Stats">
+    <meta name="apple-mobile-web-app-title" content="Hospital Stats">
     <title>Hospital Stats - Allied Healthcare Data Logger</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
 
     <!-- Google Fonts - Roboto -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -71,5 +77,99 @@
     
     <!-- Main app initialization -->
     <script src="app.js" defer></script>
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register service worker for PWA functionality
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(function(registration) {
+                        console.log('[PWA] Service Worker registered successfully:', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New version available, show update notification
+                                    if (window.UIComponents && window.UIComponents.showNotification) {
+                                        window.UIComponents.showNotification(
+                                            'App update available! Refresh to get the latest version.',
+                                            'info',
+                                            8000
+                                        );
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(error) {
+                        console.log('[PWA] Service Worker registration failed:', error);
+                    });
+                
+                // Listen for messages from service worker
+                navigator.serviceWorker.addEventListener('message', function(event) {
+                    if (event.data && event.data.type === 'BACKGROUND_SYNC') {
+                        // Trigger sync if available
+                        if (window.Sync && window.Sync.syncPendingRecords) {
+                            window.Sync.syncPendingRecords();
+                        }
+                    }
+                });
+            });
+        }
+        
+        // Add install prompt handling
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', function(e) {
+            console.log('[PWA] Install prompt triggered');
+            
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            
+            // Show custom install notification after a delay
+            setTimeout(function() {
+                if (window.UIComponents && window.UIComponents.showNotification) {
+                    window.UIComponents.showNotification(
+                        'Install Hospital Stats as an app for better offline access!',
+                        'info',
+                        10000
+                    );
+                }
+            }, 3000);
+        });
+        
+        // Function to trigger install (can be called from UI)
+        window.installPWA = function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('[PWA] User accepted the install prompt');
+                    } else {
+                        console.log('[PWA] User dismissed the install prompt');
+                    }
+                    deferredPrompt = null;
+                });
+            }
+        };
+        
+        // Handle successful installation
+        window.addEventListener('appinstalled', function(evt) {
+            console.log('[PWA] App successfully installed');
+            if (window.UIComponents && window.UIComponents.showNotification) {
+                window.UIComponents.showNotification(
+                    'Hospital Stats installed successfully! You can now use it offline.',
+                    'success',
+                    5000
+                );
+            }
+        });
+    </script>
 </body>
 </html>
