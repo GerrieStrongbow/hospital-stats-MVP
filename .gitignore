@@ -1,7 +1,6 @@
 # Environment variables and config
 .env
 .env.local
-config.js
 
 # OS files
 .DS_Store
