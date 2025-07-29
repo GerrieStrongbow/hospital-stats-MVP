@@ -168,7 +168,7 @@
         // Handle route changes (bridge to old view system during migration)
         handleRouteChange(event) {
             const { view, args, params } = event.detail;
-            console.log('Route change event:', view, args, params);
+            // Removed verbose logging to reduce console noise
             
             // During migration, we'll bridge to the old view rendering
             // This will be removed once all views are extracted to modules

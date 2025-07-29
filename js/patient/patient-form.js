@@ -406,7 +406,7 @@
             return `
                 <div class="header">
                     <div class="nav">
-                        <button class="btn" style="background: none; color: white;" onclick="router.navigate('dashboard')">
+                        <button class="btn" style="background: none; color: white;" onclick="Router.navigate('dashboard')">
                             ← Back
                         </button>
                         <h1 class="header-title">${title}</h1>
@@ -422,7 +422,7 @@
                                         ${this.isEditing ? 'Editing existing record' : 'Creating new record'}
                                     </div>
                                     <div class="form-nav-actions">
-                                        <button type="button" class="btn btn-secondary" onclick="router.navigate('patients')">
+                                        <button type="button" class="btn btn-secondary" onclick="Router.navigate('patients')">
                                             Cancel
                                         </button>
                                         ${this.isEditing ? `

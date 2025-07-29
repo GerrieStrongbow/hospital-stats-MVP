@@ -16,10 +16,10 @@
                             Allied Healthcare Data Logger
                         </p>
                         <div style="max-width: 300px; margin: 0 auto;">
-                            <button class="btn btn-primary btn-block mb-3" onclick="router.navigate('login')">
+                            <button class="btn btn-primary btn-block mb-3" onclick="Router.navigate('login')">
                                 Sign In
                             </button>
-                            <button class="btn btn-secondary btn-block" onclick="router.navigate('register')">
+                            <button class="btn btn-secondary btn-block" onclick="Router.navigate('register')">
                                 Register
                             </button>
                         </div>
@@ -54,7 +54,7 @@
                         </form>
                         <p class="text-center mt-3">
                             Don't have an account?
-                            <a href="#" onclick="router.navigate('register'); return false;">Register</a>
+                            <a href="#" onclick="Router.navigate('register'); return false;">Register</a>
                         </p>
                     </div>
                 </div>
@@ -151,7 +151,7 @@
                         </form>
                         <p class="text-center mt-3">
                             Already have an account?
-                            <a href="#" onclick="router.navigate('login'); return false;">Sign In</a>
+                            <a href="#" onclick="Router.navigate('login'); return false;">Sign In</a>
                         </p>
                     </div>
                 </div>
@@ -243,7 +243,7 @@
                     <div class="card">
                         <h3>Patient Records</h3>
                         <p class="text-secondary">View and manage all patient records</p>
-                        <button class="btn btn-secondary btn-block mt-3" onclick="router.navigate('patients')">
+                        <button class="btn btn-secondary btn-block mt-3" onclick="Router.navigate('patients')">
                             View All Patient Records
                         </button>
                     </div>
@@ -263,7 +263,7 @@
                     </div>
                     ` : ''}
 
-                    <button class="fab" onclick="router.navigate('patient/new')">+</button>
+                    <button class="fab" onclick="Router.navigate('patient/new')">+</button>
                 </div>
             `;
         },
@@ -347,7 +347,7 @@
                     <div class="card mb-3">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                             <h3>Patient Records (${allRecords.length})</h3>
-                            <button class="btn btn-primary" onclick="router.navigate('patient/new')">
+                            <button class="btn btn-primary" onclick="Router.navigate('patient/new')">
                                 + Add New Patient
                             </button>
                         </div>
@@ -361,7 +361,7 @@
                         ${recordsHtml}
                     </div>
                     
-                    <button class="fab" onclick="router.navigate('patient/new')">+</button>
+                    <button class="fab" onclick="Router.navigate('patient/new')">+</button>
                 </div>
             `;
         },
