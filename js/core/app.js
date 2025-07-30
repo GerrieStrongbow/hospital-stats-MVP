@@ -27,6 +27,11 @@
                 // Set up global event listeners
                 this.setupGlobalEvents();
                 
+                // Initialize sync status indicator
+                if (window.UIComponents && window.UIComponents.initSyncStatusIndicator) {
+                    window.UIComponents.initSyncStatusIndicator();
+                }
+                
                 // Mark as initialized
                 this.initialized = true;
                 console.log('App initialization complete');

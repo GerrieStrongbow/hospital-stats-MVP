@@ -24,3 +24,6 @@ build/
 
 # YoYo AI version control directory
 .yoyo/
+
+# Vercel
+.vercel

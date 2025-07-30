@@ -7,6 +7,138 @@
 
     const UIComponents = {
         /**
+         * Create sync status indicator element
+         */
+        createSyncStatusIndicator() {
+            const indicator = document.createElement('div');
+            indicator.id = 'sync-status-indicator';
+            indicator.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                background: white;
+                border: 1px solid #ddd;
+                border-radius: 8px;
+                padding: 8px 16px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 14px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                z-index: 1000;
+                transition: all 0.3s ease;
+            `;
+            
+            const statusDot = document.createElement('div');
+            statusDot.id = 'sync-status-dot';
+            statusDot.style.cssText = `
+                width: 8px;
+                height: 8px;
+                border-radius: 50%;
+                background: #4CAF50;
+                transition: background 0.3s ease;
+            `;
+            
+            const statusText = document.createElement('span');
+            statusText.id = 'sync-status-text';
+            statusText.textContent = 'Online';
+            
+            const pendingCount = document.createElement('span');
+            pendingCount.id = 'sync-pending-count';
+            pendingCount.style.cssText = `
+                display: none;
+                background: #ff9800;
+                color: white;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+                margin-left: 8px;
+            `;
+            
+            indicator.appendChild(statusDot);
+            indicator.appendChild(statusText);
+            indicator.appendChild(pendingCount);
+            
+            return indicator;
+        },
+
+        /**
+         * Update sync status indicator
+         */
+        updateSyncStatusIndicator() {
+            const dot = document.getElementById('sync-status-dot');
+            const text = document.getElementById('sync-status-text');
+            const count = document.getElementById('sync-pending-count');
+            
+            if (!dot || !text || !count) return;
+            
+            const syncStatus = window.Sync?.getSyncStatus() || {};
+            const isOnline = syncStatus.isOnline !== false; // Default to online if undefined
+            const isSyncing = syncStatus.isSyncing || false;
+            const pendingSync = syncStatus.pendingSync || 0;
+            
+            if (isSyncing) {
+                dot.style.background = '#2196F3';
+                dot.style.animation = 'pulse 1s infinite';
+                text.textContent = 'Syncing...';
+            } else if (isOnline) {
+                dot.style.background = '#4CAF50';
+                dot.style.animation = 'none';
+                text.textContent = 'Online';
+            } else {
+                dot.style.background = '#f44336';
+                dot.style.animation = 'none';
+                text.textContent = 'Offline';
+            }
+            
+            if (pendingSync > 0) {
+                count.style.display = 'inline-block';
+                count.textContent = pendingSync;
+            } else {
+                count.style.display = 'none';
+            }
+        },
+
+        /**
+         * Initialize sync status indicator
+         */
+        initSyncStatusIndicator() {
+            // Add pulse animation style
+            if (!document.getElementById('sync-pulse-style')) {
+                const style = document.createElement('style');
+                style.id = 'sync-pulse-style';
+                style.textContent = `
+                    @keyframes pulse {
+                        0% { opacity: 1; }
+                        50% { opacity: 0.5; }
+                        100% { opacity: 1; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Add indicator to page if not exists
+            if (!document.getElementById('sync-status-indicator')) {
+                document.body.appendChild(this.createSyncStatusIndicator());
+            }
+            
+            // Update status immediately
+            this.updateSyncStatusIndicator();
+            
+            // Update status periodically
+            setInterval(() => {
+                this.updateSyncStatusIndicator();
+            }, 5000);
+            
+            // Listen for state changes
+            window.addEventListener('state:changed', (event) => {
+                if (event.detail.key === 'isOnline' || event.detail.key === 'isSyncing') {
+                    this.updateSyncStatusIndicator();
+                }
+            });
+        },
+
+        /**
          * Get facility options for dropdowns
          */
         getFacilityOptions() {

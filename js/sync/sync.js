@@ -18,16 +18,35 @@
         
         // Setup network connectivity listeners
         setupNetworkListeners() {
-            window.addEventListener('online', () => {
-                console.log('Network connection restored');
-                this.isOnline = true;
-                State.set('isOnline', true);
-                
-                // Auto-sync when coming back online
-                if (this.autoSyncEnabled) {
-                    setTimeout(() => {
-                        this.syncPatientRecords();
-                    }, 1000); // Wait 1 second after connection restored
+            // Enhanced network detection for better accuracy
+            const checkNetworkStatus = async () => {
+                try {
+                    // Try to fetch a small resource to verify actual connectivity
+                    const response = await fetch('/manifest.json', { 
+                        method: 'HEAD',
+                        cache: 'no-store'
+                    });
+                    return response.ok;
+                } catch {
+                    // If we can't fetch local resources, check navigator.onLine
+                    return navigator.onLine;
+                }
+            };
+            
+            window.addEventListener('online', async () => {
+                // Verify actual connectivity before updating status
+                const isActuallyOnline = await checkNetworkStatus();
+                if (isActuallyOnline) {
+                    console.log('Network connection restored');
+                    this.isOnline = true;
+                    State.set('isOnline', true);
+                    
+                    // Auto-sync when coming back online
+                    if (this.autoSyncEnabled) {
+                        setTimeout(() => {
+                            this.syncPatientRecords();
+                        }, 1000); // Wait 1 second after connection restored
+                    }
                 }
             });
             
@@ -37,8 +56,11 @@
                 State.set('isOnline', false);
             });
             
-            // Update initial state
-            State.set('isOnline', this.isOnline);
+            // Update initial state with actual network check
+            checkNetworkStatus().then(isOnline => {
+                this.isOnline = isOnline;
+                State.set('isOnline', isOnline);
+            });
         },
         
         // Start auto-sync interval
@@ -178,8 +200,6 @@
                 }
                 
                 console.log('Syncing record:', recordId);
-                
-                const supabase = State.get('supabase');
                 
                 // Prepare data for Supabase (remove local-only fields)
                 const supabaseData = this.prepareRecordForSupabase(record, userId);
